@@ -29,7 +29,7 @@
 <meta property="og:locale" content="en_US"/>
 <meta property="og:url" content="/authorship-attribution-and-topic-discovery.html"/>
 <meta property="og:type" content="article"/>
-<meta property="article:published_time" content="2017-11-27 04:03:38.765004-05:00"/>
+<meta property="article:published_time" content="2017-11-27 04:07:36.054991-05:00"/>
 <meta property="article:modified_time" content=""/>
 <meta property="article:author" content="/author/quan-gan-andy.html">
 <meta property="article:section" content="nlp"/>
@@ -370,7 +370,7 @@ $$</span><script type="math/tex; mode=display">
 </tr>
 </tbody>
 </table>
-<p>It seems that other than the computer vision folks, the model tend to assign more generic words that can be applied to <em>anybody</em> (such as <code>model</code>, <code>learning</code>, etc.) as top-ranked words.  This issue is more severe on the highest-ranked words: those words simply didn't tell us anything about the author's interest.</p>
+<p>In the vanilla case (where there is no <span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span>, it seems that other than the computer vision folks, the model tend to assign more generic words that can be applied to <em>anybody</em> (such as <code>model</code>, <code>learning</code>, etc.) as top-ranked words.  This issue is more severe on the highest-ranked words: those words simply didn't tell us anything about the author's interest.</p>
 <h4>Inverse Document Frequency Regularizer?</h4>
 <p>Presumably, common words like <code>model</code>, <code>learning</code> should appear across a majority of the papers <em>regardless</em> of the actual topics.  Since we have L2 regularization on the word embeddings, words that appear more often would have a larger L2 norm than the rare ones.  And because we are computing the scores by dot products, the embeddings that have a bigger L2 norm will dominate the smaller ones.  For instance, in the model above, the embedding for <code>learning</code> has an L2 norm of 23.06, while the one for <code>policy</code> is only 5.68.</p>
 <p>Penalizing the norm of the more frequent words should help.  However, we probably don't want to regularize a word that occurs frequently in a <em>single</em> document but nowhere else; such word is very likely informative.  Therefore, we only want to penalize the word based on <em>the number of documents where the word showed up</em>.  We can regard this idea as an analogy to inverse document frequency (IDF).</p>
