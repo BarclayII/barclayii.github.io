@@ -44,7 +44,7 @@
 	<meta property="og:title" content="Authorship Attribution and Topic Discovery">
 	<meta property="og:description" content="">
 	   <meta property="og:image" content="/images/guilherme-toti.jpg">
-	<meta property="article:published_time" content="2017-11-27 01:22:25.027064-05:00">
+	<meta property="article:published_time" content="2017-11-27 01:41:11.195927-05:00">
 	</head>
 	<body>
 		<header id="header">
@@ -111,23 +111,32 @@
 			</ul>
 		</header>
 
-		<p>As a project for <a href="https://github.com/joanbruna/ir17">Inference and Representation</a> course in NYU, me and <a href="https://github.com/BruceChaun">this guy</a> decided to do some modeling of academic author interests.  Such model would have several practical applications:
-<em> Recommending latest papers to researchers, like what <a href="https://www.mendeley.com">Mendeley</a> and <a href="https://academic.microsoft.com">Microsoft Academic (MSA)</a> does.
-</em> Recommending the researchers to each other on some social network.  Both Mendeley and MSA have this.  I wonder why not a lot of people is using it as a social platform...
-* Automatically assigning papers to reviewers.  Actually we already have <a href="http://torontopapermatching.org/webapp/profileBrowser/about_us/">Toronto Paper Matching System (TPMS)</a> adopted in multiple conference review systems.</p>
+		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js">
+</script>
+
+<p>As a project for <a href="https://github.com/joanbruna/ir17">Inference and Representation</a> course in NYU, me and <a href="https://github.com/BruceChaun">this guy</a> decided to do some modeling of academic author interests.  Such model would have several practical applications:</p>
+<ul>
+<li>Recommending latest papers to researchers, like what <a href="https://www.mendeley.com">Mendeley</a> and <a href="https://academic.microsoft.com">Microsoft Academic (MSA)</a> does.</li>
+<li>Recommending the researchers to each other on some social network.  Both Mendeley and MSA have this.  I wonder why not a lot of people is using it as a social platform...</li>
+<li>Automatically assigning papers to reviewers.  Actually we already have <a href="http://torontopapermatching.org/webapp/profileBrowser/about_us/">Toronto Paper Matching System (TPMS)</a> adopted in multiple conference review systems.</li>
+</ul>
 <p>Nonetheless, I have to admit that the main motivation (at least for me) of doing this project is to enable some ways to visualize the authors as groups, and inspect them with my own eyes.  After all, it should be a lot of fun to see which researchers are close to each other on a figure.</p>
 <p><strong>The code is available <a href="https://github.com/BruceChaun/ArxivInference">here</a>.</strong></p>
 <h4>Dataset</h4>
 <p>Preferably, we would like a dataset that has strong indicator of "interest".  A good example would be the user database of Mendeley or MSA, where actual users have an archive of papers; such papers obviously are of the user's interest.  Another good dataset would be those from TPMS.</p>
 <p>Unfortunately, it is unlikely for MSA and Mendeley to share their database to the public (of course).  Also the dataset used by TPMS is not available.  Therefore, we have to use <em>authorship</em> as a proxy of author interest.  After all, a person should be sufficiently interested on some topic so that he/she can actually write something about it.</p>
-<p>It is much easier to grab authorship data, since there are already a number of online libraries, such as <a href="https://www.arxiv.org">arXiv</a> and MSA.  Both libraries have bulk data access Web API where one can easily scrape metadata of all the papers, including the authors, abstracts, titles, etc.
-<em> We have a NIPS papers dataset, where <a href="https://mimno.infosci.cornell.edu/info6150/readings/398.pdf">Author Topic Model</a> and <a href="https://www.cl.cam.ac.uk/~np394/docs/hdm_2014_paper.pdf">the supervised version</a> were both evaluated.
-</em> Thanks to Andrej Karpathy's <a href="https://www.arxiv-sanity.com">arxiv-sanity</a>, we can conveniently grab thousands of machine learning research papers.  We crawled 49,980 papers using arXiv-sanity, covering the research from 1997 to 2017 (a 20-year span).</p>
+<p>It is much easier to grab authorship data, since there are already a number of online libraries, such as <a href="https://www.arxiv.org">arXiv</a> and MSA.  Both libraries have bulk data access Web API where one can easily scrape metadata of all the papers, including the authors, abstracts, titles, etc.</p>
+<ul>
+<li>We have a NIPS papers dataset, where <a href="https://mimno.infosci.cornell.edu/info6150/readings/398.pdf">Author Topic Model</a> and <a href="https://www.cl.cam.ac.uk/~np394/docs/hdm_2014_paper.pdf">the supervised version</a> were both evaluated.</li>
+<li>Thanks to Andrej Karpathy's <a href="https://www.arxiv-sanity.com">arxiv-sanity</a>, we can conveniently grab thousands of machine learning research papers.  We crawled 49,980 papers using arXiv-sanity, covering the research from 1997 to 2017 (a 20-year span).</li>
+</ul>
 <p>For all datasets, we lowercase all the words, and removed the stop words.</p>
 <h4>Model</h4>
-<p>The model we were using is very simple:
-1. We represent each word and each author as 20-dimension embeddings, and compute a score of authorship by dot product between the author embedding and the average word embedding of a document.
-2. We minimize a pairwise ranking loss with negative sampling on both authors and documents.</p>
+<p>The model we were using is very simple:</p>
+<ol>
+<li>We represent each word and each author as 20-dimension embeddings, and compute a score of authorship by dot product between the author embedding and the average word embedding of a document.</li>
+<li>We minimize a pairwise ranking loss with negative sampling on both authors and documents.</li>
+</ol>
 <p>More formally, we have a dataset of <span><span class="MathJax_Preview">$D$</span><script type="math/tex">D</script></span> papers, where each document has a list of words <span><span class="MathJax_Preview">$\mathcal{D}_i = (w_{i_1}, ..., w_{i_{n_i}})$</span><script type="math/tex">\mathcal{D}_i = (w_{i_1}, ..., w_{i_{n_i}})</script></span> and a list of authors <span><span class="MathJax_Preview">$\mathcal{A}_i = (a_{i_1}, ..., a_{i_{m_i}})$</span><script type="math/tex">\mathcal{A}_i = (a_{i_1}, ..., a_{i_{m_i}})</script></span>.  The total number of authors in the dataset is <span><span class="MathJax_Preview">$A$</span><script type="math/tex">A</script></span>.</p>
 <p>We first convert all <span><span class="MathJax_Preview">$w_{i,j}$</span><script type="math/tex">w_{i,j}</script></span> and <span><span class="MathJax_Preview">$a_{i,k}$</span><script type="math/tex">a_{i,k}</script></span> to some embedding vectors <span><span class="MathJax_Preview">$\mathbf{w}_{i,j}$</span><script type="math/tex">\mathbf{w}_{i,j}</script></span> and <span><span class="MathJax_Preview">$\mathbf{a}_{i,k}$</span><script type="math/tex">\mathbf{a}_{i,k}</script></span>, using embedding matrices <span><span class="MathJax_Preview">$\mathbf{W}$</span><script type="math/tex">\mathbf{W}</script></span> and <span><span class="MathJax_Preview">$\mathbf{A}$</span><script type="math/tex">\mathbf{A}</script></span> for words and authors respectively.  Then we compute the bag-of-words embedding and a bag-of-authors embedding:</p>
 <p>
@@ -141,16 +150,18 @@ $$</span><script type="math/tex; mode=display">
 </div>
 </p>
 <p>The score is simply <span><span class="MathJax_Preview">$s_i = \bar{\mathbf{w}}_i^T\bar{\mathbf{a}}_i$</span><script type="math/tex">s_i = \bar{\mathbf{w}}_i^T\bar{\mathbf{a}}_i</script></span>.</p>
-<p>We chose ranking loss only because we don't feel like assigning a concrete number as a target for optimization.  Rather, we think it makes more sense to just tell the model to "prefer" some authors/documents than others.  In order to use ranking loss, we need some negative samples:
-<em> For document, we simply sample one uniformly in the corpus and we can similarly have a bag-of-word <span><span class="MathJax_Preview">$\bar{\mathbf{w}}_i'$</span><script type="math/tex">\bar{\mathbf{w}}_i'</script></span>.
-</em> For authors, we treat the set of all authors, excluding <span><span class="MathJax_Preview">$\mathcal{A}_i$</span><script type="math/tex">\mathcal{A}_i</script></span>, as the negative sample of authors.  The formulation is simply
+<p>We chose ranking loss only because we don't feel like assigning a concrete number as a target for optimization.  Rather, we think it makes more sense to just tell the model to "prefer" some authors/documents than others.  In order to use ranking loss, we need some negative samples:</p>
+<ul>
+<li>For document, we simply sample one uniformly in the corpus and we can similarly have a bag-of-word <span><span class="MathJax_Preview">$\bar{\mathbf{w}}_i'$</span><script type="math/tex">\bar{\mathbf{w}}_i'</script></span>.</li>
+<li>For authors, we treat the set of all authors, excluding <span><span class="MathJax_Preview">$\mathcal{A}_i$</span><script type="math/tex">\mathcal{A}_i</script></span>, as the negative sample of authors.  The formulation is simply
   <div><span class="MathJax_Preview">$$
   \bar{\mathbf{a}}_i'=\dfrac{1}{A-m_i}\left(\sum_{k=1}^A\mathbf{a}_{i,k} - m_i \bar{\mathbf{a}}_i\right)
   $$</span><script type="math/tex; mode=display">
   \bar{\mathbf{a}}_i'=\dfrac{1}{A-m_i}\left(\sum_{k=1}^A\mathbf{a}_{i,k} - m_i \bar{\mathbf{a}}_i\right)
   </script>
 </div>
-</p>
+</li>
+</ul>
 <p>The loss function we are going to minimize is then simply two pairwise ranking losses, one for negative author samples and another for negative document samples, plus regularization terms:</p>
 <p>
 <div><span class="MathJax_Preview">$$
@@ -199,12 +210,14 @@ $$</span><script type="math/tex; mode=display">
 <p>We can do a lot of things as qualitative analysis:
 <em> Given an author, propose a list of words associated to the topic of his/her interest.  We can do that by ranking all the words <span><span class="MathJax_Preview">$w_j$</span><script type="math/tex">w_j</script></span> with the scores <span><span class="MathJax_Preview">$\mathbf{w}_j^T \mathbf{a}_i$</span><script type="math/tex">\mathbf{w}_j^T \mathbf{a}_i</script></span>.
 </em> Given an author, find his/her nearest neighbors (or visualize the embeddings using t-SNE).</p>
-<p>We evaluate qualitatively using the arXiv dataset.  We first divided the dataset into training, validation, and test by 8:1:1.  Then, we only keep the authors which appeared at least 3 times in the training set as the author set.  We finally discard every paper in all three partitions where none of the authors is in the author set, and only kept the paper abstracts as documents.  Consequently, we have:
-<em> a vocabulary of 91719 words
-</em> a set of 11492 authors
-<em> a training set of 31923 papers
-</em> a validation set of 3577 papers
-* a test set of 3521 papers</p>
+<p>We evaluate qualitatively using the arXiv dataset.  We first divided the dataset into training, validation, and test by 8:1:1.  Then, we only keep the authors which appeared at least 3 times in the training set as the author set.  We finally discard every paper in all three partitions where none of the authors is in the author set, and only kept the paper abstracts as documents.  Consequently, we have:</p>
+<ul>
+<li>a vocabulary of 91719 words</li>
+<li>a set of 11492 authors</li>
+<li>a training set of 31923 papers</li>
+<li>a validation set of 3577 papers</li>
+<li>a test set of 3521 papers</li>
+</ul>
 <p>Here is the top-ranked words given an author.  Here I picked some authors that I have heard of, and grouped them into several categories.  Yes, it means that I'm the ~~noisy~~ classifier of author interests.</p>
 <p><strong>I'm also considering releasing a web-app demo but I don't know if I have time to do it.</strong></p>
 <p>The meaning of <span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span> is explained in the following section.</p>
@@ -445,12 +458,18 @@ where <span><span class="MathJax_Preview">$C_i$</span><script type="math/tex">C_
 </table>
 <p>The top-ranked words for the authors with non-zero <span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span> is shown above.  We can see that when <span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span> is too big, rare words did occur more frequently --- but the model also fills rare words in random places (e.g. <code>adversarial</code> and <code>gan</code> seems to be all over the place).</p>
 <h4>Embedding visualizations</h4>
-<p>I tabulated the embeddings of authors which occurred more than 5 times:
-<em> <a href="https://raw.githubusercontent.com/BruceChaun/ArxivInference/master/users.tsv">Metadata file</a>
-</em> <a href="https://raw.githubusercontent.com/BruceChaun/ArxivInference/master/embedding.tsv">Embedding</a>
-    * <a href="http://projector.tensorflow.org/?config=https://raw.githubusercontent.com/BruceChaun/ArxivInference/master/projector.json">See on Tensorflow Projector</a>
-* <a href="https://raw.githubusercontent.com/BruceChaun/ArxivInference/master/embedding-lambda%3D0.1.tsv">Embedding with <span><span class="MathJax_Preview">$\lambda_c=0.1$</span><script type="math/tex">\lambda_c=0.1</script></span></a>
-    * <a href="http://projector.tensorflow.org/?config=https://raw.githubusercontent.com/BruceChaun/ArxivInference/master/projector-lambda%3D0.1.json">See on Tensorflow Projector</a></p>
+<p>I tabulated the embeddings of authors which occurred more than 5 times:</p>
+<ul>
+<li><a href="https://raw.githubusercontent.com/BruceChaun/ArxivInference/master/users.tsv">Metadata file</a></li>
+<li><a href="https://raw.githubusercontent.com/BruceChaun/ArxivInference/master/embedding.tsv">Embedding</a><ul>
+<li><a href="http://projector.tensorflow.org/?config=https://raw.githubusercontent.com/BruceChaun/ArxivInference/master/projector.json">See on Tensorflow Projector</a></li>
+</ul>
+</li>
+<li><a href="https://raw.githubusercontent.com/BruceChaun/ArxivInference/master/embedding-lambda%3D0.1.tsv">Embedding with <span><span class="MathJax_Preview">$\lambda_c=0.1$</span><script type="math/tex">\lambda_c=0.1</script></span></a><ul>
+<li><a href="http://projector.tensorflow.org/?config=https://raw.githubusercontent.com/BruceChaun/ArxivInference/master/projector-lambda%3D0.1.json">See on Tensorflow Projector</a></li>
+</ul>
+</li>
+</ul>
 		    <div class="tags">
 		        <p>tags: <a href="/tag/nlp-word-embedding-shallow.html">nlp word-embedding shallow</a></p>
 		    </div>
