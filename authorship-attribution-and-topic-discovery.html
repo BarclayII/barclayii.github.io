@@ -54,7 +54,7 @@
            
             </header>
             <footer class="post-info">
-              <abbr class="published" title="2017-11-27T03:10:19.673590-05:00">
+              <abbr class="published" title="2017-11-27T03:28:10.449248-05:00">
                 Mon 27 November 2017
               </abbr>
               <address class="vcard author">By 
@@ -134,70 +134,68 @@ $$</span><script type="math/tex; mode=display">
 <h4>Quantitative Results</h4>
 <ol>
 <li>
-<p>We evaluated our model on the NIPS 1987-2013 dataset, same as what the Supervised Author-Topic Model did.  We got our own set of papers from <a href="https://www.kaggle.com/benhamner/nips-papers">here</a>.  The resulting dataset is different from the original paper though: we have 2372 papers, 2577 authors and a vocabulary of 181948 words; the author set and the vocabulary is larger than theirs.  Not sure if it helps the performance, but our model seems to be significantly better in terms of AUC on multiple authors:</p>
-<table>
+<p>We evaluated our model on the NIPS 1987-2013 dataset, same as what the Supervised Author-Topic Model did.  We got our own set of papers from <a href="https://www.kaggle.com/benhamner/nips-papers">here</a>.  The resulting dataset is different from the original paper though: we have 2372 papers, 2577 authors and a vocabulary of 181948 words; the author set and the vocabulary is larger than theirs.  Not sure if it helps the performance, but our model seems to be significantly better in terms of AUC on multiple authors:
+<table class="table-hover">
 <thead>
 <tr>
-<th align="center">Model</th>
-<th align="center">AUC</th>
+<th style="text-align:center">Model</th>
+<th style="text-align:center">AUC</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td align="center">Supervised Author-Topic Model</td>
-<td align="center">0.67</td>
+<td style="text-align:center">Supervised Author-Topic Model</td>
+<td style="text-align:center">0.67</td>
 </tr>
 <tr>
-<td align="center">Author-Topic Model</td>
-<td align="center">0.62</td>
+<td style="text-align:center">Author-Topic Model</td>
+<td style="text-align:center">0.62</td>
 </tr>
 <tr>
-<td align="center">RF: Single-tree</td>
-<td align="center">0.55</td>
+<td style="text-align:center">RF: Single-tree</td>
+<td style="text-align:center">0.55</td>
 </tr>
 <tr>
-<td align="center">RF: 5-trees</td>
-<td align="center">0.71</td>
+<td style="text-align:center">RF: 5-trees</td>
+<td style="text-align:center">0.71</td>
 </tr>
 <tr>
-<td align="center">Ours</td>
-<td align="center">0.85</td>
+<td style="text-align:center">Ours</td>
+<td style="text-align:center">0.85</td>
 </tr>
 </tbody>
-</table>
+</table></p>
 </li>
 <li>
-<p>We also evaluated the average precision over 1, 5, 10, 50.  The result is pretty lame though:</p>
-<table>
+<p>We also evaluated the average precision over 1, 5, 10, 50.  The result is pretty lame though:
+<table class="table-hover">
 <thead>
 <tr>
-<th align="center">K</th>
-<th align="center">AP@K</th>
+<th style="text-align:center">K</th>
+<th style="text-align:center">AP@K</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td align="center">1</td>
-<td align="center">0.088</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0.088</td>
 </tr>
 <tr>
-<td align="center">5</td>
-<td align="center">0.092</td>
+<td style="text-align:center">5</td>
+<td style="text-align:center">0.092</td>
 </tr>
 <tr>
-<td align="center">10</td>
-<td align="center">0.099</td>
+<td style="text-align:center">10</td>
+<td style="text-align:center">0.099</td>
 </tr>
 <tr>
-<td align="center">50</td>
-<td align="center">0.109</td>
+<td style="text-align:center">50</td>
+<td style="text-align:center">0.109</td>
 </tr>
 </tbody>
-</table>
+</table></p>
 </li>
-<li>
-<p>For each document-author pair in the dataset, we also computed the ranking of that author among everybody, and took the median.  The result is 101 out of 2577 --- OK'ish, but not great.</p>
-</li>
+<li>For each document-author pair in the dataset, we also computed the ranking of that author among everybody, and took the median.  The result is 101 out of 2577 --- OK'ish, but not great.</li>
 </ol>
 <h4>Discovering Topics</h4>
 <p>We can do a lot of things as qualitative analysis:
@@ -214,150 +212,151 @@ $$</span><script type="math/tex; mode=display">
 <p>Here is the top-ranked words given an author.  Here I picked some authors that I have heard of, and grouped them into several categories.  Yes, it means that I'm the ~~noisy~~ classifier of author interests.</p>
 <p><strong>I'm also considering releasing a web-app demo but I don't know if I have time to do it.</strong></p>
 <p>The meaning of <span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span> is explained in the following section.</p>
-<table>
+<table class="table-hover">
 <thead>
 <tr>
-<th align="center">Name</th>
-<th align="center">Top-5 words</th>
-<th align="center">Top-5 words with <span><span class="MathJax_Preview">$\lambda_c=0.1$</span><script type="math/tex">\lambda_c=0.1</script></span></th>
-<th align="center">Top-5 words with <span><span class="MathJax_Preview">$\lambda_c=1$</span><script type="math/tex">\lambda_c=1</script></span></th>
+<th style="text-align:center">Name</th>
+<th style="text-align:center">Top-5 words</th>
+<th style="text-align:center">Top-5 words with <span class="mathjax"><span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-4871-Frame" tabindex="0" data-mathml="<math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;><msub><mi>&amp;#x03BB;</mi><mi>c</mi></msub><mo>=</mo><mn>0.1</mn></math>" role="presentation" style="position: relative;"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-61892" style="width: 4.306em; display: inline-block;"><span style="display: inline-block; position: relative; width: 3.537em; height: 0px; font-size: 122%;"><span style="position: absolute; clip: rect(1.335em 1003.49em 2.513em -999.997em); top: -2.2em; left: 0em;"><span class="mrow" id="MathJax-Span-61893"><span class="msubsup" id="MathJax-Span-61894"><span style="display: inline-block; position: relative; width: 0.976em; height: 0px;"><span style="position: absolute; clip: rect(3.128em 1000.57em 4.152em -999.997em); top: -3.993em; left: 0em;"><span class="mi" id="MathJax-Span-61895" style="font-family: MathJax_Math; font-style: italic;">λ</span><span style="display: inline-block; width: 0px; height: 3.998em;"></span></span><span style="position: absolute; top: -3.84em; left: 0.566em;"><span class="mi" id="MathJax-Span-61896" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">c</span><span style="display: inline-block; width: 0px; height: 3.998em;"></span></span></span></span><span class="mo" id="MathJax-Span-61897" style="font-family: MathJax_Main; padding-left: 0.259em;">=</span><span class="mn" id="MathJax-Span-61898" style="font-family: MathJax_Main; padding-left: 0.259em;">0.1</span></span><span style="display: inline-block; width: 0px; height: 2.205em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.247em; border-left: 0px solid; width: 0px; height: 1.191em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>λ</mi><mi>c</mi></msub><mo>=</mo><mn>0.1</mn></math></span></span><script type="math/tex" id="MathJax-Element-4871">\lambda_c=0.1</script></span></th>
+<th style="text-align:center">Top-5 words with <span class="mathjax"><span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-4872-Frame" tabindex="0" data-mathml="<math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;><msub><mi>&amp;#x03BB;</mi><mi>c</mi></msub><mo>=</mo><mn>1</mn></math>" role="presentation" style="position: relative;"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-61899" style="width: 3.384em; display: inline-block;"><span style="display: inline-block; position: relative; width: 2.769em; height: 0px; font-size: 122%;"><span style="position: absolute; clip: rect(1.335em 1002.72em 2.513em -999.997em); top: -2.2em; left: 0em;"><span class="mrow" id="MathJax-Span-61900"><span class="msubsup" id="MathJax-Span-61901"><span style="display: inline-block; position: relative; width: 0.976em; height: 0px;"><span style="position: absolute; clip: rect(3.128em 1000.57em 4.152em -999.997em); top: -3.993em; left: 0em;"><span class="mi" id="MathJax-Span-61902" style="font-family: MathJax_Math; font-style: italic;">λ</span><span style="display: inline-block; width: 0px; height: 3.998em;"></span></span><span style="position: absolute; top: -3.84em; left: 0.566em;"><span class="mi" id="MathJax-Span-61903" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">c</span><span style="display: inline-block; width: 0px; height: 3.998em;"></span></span></span></span><span class="mo" id="MathJax-Span-61904" style="font-family: MathJax_Main; padding-left: 0.259em;">=</span><span class="mn" id="MathJax-Span-61905" style="font-family: MathJax_Main; padding-left: 0.259em;">1</span></span><span style="display: inline-block; width: 0px; height: 2.205em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.247em; border-left: 0px solid; width: 0px; height: 1.191em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>λ</mi><mi>c</mi></msub><mo>=</mo><mn>1</mn></math></span></span><script type="math/tex" id="MathJax-Element-4872">\lambda_c=1</script></span></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td align="center">Li Fei-Fei</td>
-<td align="center"><code>visual images image video object</code></td>
-<td align="center"><code>visual video object image images</code></td>
-<td align="center"><code>visual video object deep saliency</code></td>
+<td style="text-align:center">Li Fei-Fei</td>
+<td style="text-align:center"><code>visual images image video object</code></td>
+<td style="text-align:center"><code>visual video object image images</code></td>
+<td style="text-align:center"><code>visual video object deep saliency</code></td>
 </tr>
 <tr>
-<td align="center">Kaiming He</td>
-<td align="center"><code>image images networks neural deep</code></td>
-<td align="center"><code>deep image convolutional images visual</code></td>
-<td align="center"><code>video image visual 3d saliency</code></td>
+<td style="text-align:center">Kaiming He</td>
+<td style="text-align:center"><code>image images networks neural deep</code></td>
+<td style="text-align:center"><code>deep image convolutional images visual</code></td>
+<td style="text-align:center"><code>video image visual 3d saliency</code></td>
 </tr>
 <tr>
-<td align="center">Seunghoon Hong</td>
-<td align="center"><code>images proposed visual video object</code></td>
-<td align="center"><code>image images video segmentation visual</code></td>
-<td align="center"><code>video saliency 3d segmentation image</code></td>
+<td style="text-align:center">Seunghoon Hong</td>
+<td style="text-align:center"><code>images proposed visual video object</code></td>
+<td style="text-align:center"><code>image images video segmentation visual</code></td>
+<td style="text-align:center"><code>video saliency 3d segmentation image</code></td>
 </tr>
 <tr>
-<td align="center">Rob Fergus</td>
-<td align="center"><code>model models image images visual</code></td>
-<td align="center"><code>deep visual training neural object</code></td>
-<td align="center"><code>adversarial deep visual dropout video</code></td>
+<td style="text-align:center">Rob Fergus</td>
+<td style="text-align:center"><code>model models image images visual</code></td>
+<td style="text-align:center"><code>deep visual training neural object</code></td>
+<td style="text-align:center"><code>adversarial deep visual dropout video</code></td>
 </tr>
 <tr>
-<td align="center">Kyunghyun Cho</td>
-<td align="center"><code>neural model language network word</code></td>
-<td align="center"><code>neural speech training deep word</code></td>
-<td align="center"><code>speech word rnn lstm sentiment</code></td>
+<td style="text-align:center">Kyunghyun Cho</td>
+<td style="text-align:center"><code>neural model language network word</code></td>
+<td style="text-align:center"><code>neural speech training deep word</code></td>
+<td style="text-align:center"><code>speech word rnn lstm sentiment</code></td>
 </tr>
 <tr>
-<td align="center">Chris Dyer</td>
-<td align="center"><code>models language show word training</code></td>
-<td align="center"><code>language word text words translation</code></td>
-<td align="center"><code>word entity embedding translation sentiment</code></td>
+<td style="text-align:center">Chris Dyer</td>
+<td style="text-align:center"><code>models language show word training</code></td>
+<td style="text-align:center"><code>language word text words translation</code></td>
+<td style="text-align:center"><code>word entity embedding translation sentiment</code></td>
 </tr>
 <tr>
-<td align="center">Tomas Mikolov</td>
-<td align="center"><code>learning language word machine task</code></td>
-<td align="center"><code>language word text translation words</code></td>
-<td align="center"><code>word dialogue sentiment translation language</code></td>
+<td style="text-align:center">Tomas Mikolov</td>
+<td style="text-align:center"><code>learning language word machine task</code></td>
+<td style="text-align:center"><code>language word text translation words</code></td>
+<td style="text-align:center"><code>word dialogue sentiment translation language</code></td>
 </tr>
 <tr>
-<td align="center">Samuel R. Bowman</td>
-<td align="center"><code>model models neural language networks</code></td>
-<td align="center"><code>language word translation models text</code></td>
-<td align="center"><code>word translation dialogue speech language</code></td>
+<td style="text-align:center">Samuel R. Bowman</td>
+<td style="text-align:center"><code>model models neural language networks</code></td>
+<td style="text-align:center"><code>language word translation models text</code></td>
+<td style="text-align:center"><code>word translation dialogue speech language</code></td>
 </tr>
 <tr>
-<td align="center">Sergey Levine</td>
-<td align="center"><code>learning approach training policy using</code></td>
-<td align="center"><code>policy learning reinforcement robot agents</code></td>
-<td align="center"><code>robot policy rl reinforcement reward</code></td>
+<td style="text-align:center">Sergey Levine</td>
+<td style="text-align:center"><code>learning approach training policy using</code></td>
+<td style="text-align:center"><code>policy learning reinforcement robot agents</code></td>
+<td style="text-align:center"><code>robot policy rl reinforcement reward</code></td>
 </tr>
 <tr>
-<td align="center">David Silver</td>
-<td align="center"><code>learning algorithm policy algorithms problem</code></td>
-<td align="center"><code>policy agents reinforcement learning game</code></td>
-<td align="center"><code>policy agents rl reinforcement planning</code></td>
+<td style="text-align:center">David Silver</td>
+<td style="text-align:center"><code>learning algorithm policy algorithms problem</code></td>
+<td style="text-align:center"><code>policy agents reinforcement learning game</code></td>
+<td style="text-align:center"><code>policy agents rl reinforcement planning</code></td>
 </tr>
 <tr>
-<td align="center">Volodymyr Mnih</td>
-<td align="center"><code>learning neural networks network deep</code></td>
-<td align="center"><code>neural deep networks reinforcement agents</code></td>
-<td align="center"><code>rl policy reinforcement robot agent</code></td>
+<td style="text-align:center">Volodymyr Mnih</td>
+<td style="text-align:center"><code>learning neural networks network deep</code></td>
+<td style="text-align:center"><code>neural deep networks reinforcement agents</code></td>
+<td style="text-align:center"><code>rl policy reinforcement robot agent</code></td>
 </tr>
 <tr>
-<td align="center">Pieter Abbeel</td>
-<td align="center"><code>learning approach show policy training</code></td>
-<td align="center"><code>learning policy reinforcement agents robot</code></td>
-<td align="center"><code>policy rl robot reinforcement reward</code></td>
+<td style="text-align:center">Pieter Abbeel</td>
+<td style="text-align:center"><code>learning approach show policy training</code></td>
+<td style="text-align:center"><code>learning policy reinforcement agents robot</code></td>
+<td style="text-align:center"><code>policy rl robot reinforcement reward</code></td>
 </tr>
 <tr>
-<td align="center">David M. Blei</td>
-<td align="center"><code>models model inference data bayesian</code></td>
-<td align="center"><code>inference bayesian models model latent</code></td>
-<td align="center"><code>causal bayesian inference latent variational</code></td>
+<td style="text-align:center">David M. Blei</td>
+<td style="text-align:center"><code>models model inference data bayesian</code></td>
+<td style="text-align:center"><code>inference bayesian models model latent</code></td>
+<td style="text-align:center"><code>causal bayesian inference latent variational</code></td>
 </tr>
 <tr>
-<td align="center">Daphne Koller</td>
-<td align="center"><code>models inference bayesian model approach</code></td>
-<td align="center"><code>bayesian inference probabilistic uncertainty causal</code></td>
-<td align="center"><code>causal policy bayesian agents quantum</code></td>
+<td style="text-align:center">Daphne Koller</td>
+<td style="text-align:center"><code>models inference bayesian model approach</code></td>
+<td style="text-align:center"><code>bayesian inference probabilistic uncertainty causal</code></td>
+<td style="text-align:center"><code>causal policy bayesian agents quantum</code></td>
 </tr>
 <tr>
-<td align="center">David Sontag</td>
-<td align="center"><code>models data model inference algorithm</code></td>
-<td align="center"><code>inference models bayesian latent model</code></td>
-<td align="center"><code>latent ml variational inference predictive</code></td>
+<td style="text-align:center">David Sontag</td>
+<td style="text-align:center"><code>models data model inference algorithm</code></td>
+<td style="text-align:center"><code>inference models bayesian latent model</code></td>
+<td style="text-align:center"><code>latent ml variational inference predictive</code></td>
 </tr>
 <tr>
-<td align="center">Mehryar Mohri</td>
-<td align="center"><code>algorithm problem algorithms learning show</code></td>
-<td align="center"><code>bounds algorithms algorithm optimization bound</code></td>
-<td align="center"><code>regret bounds fairness causal bound</code></td>
+<td style="text-align:center">Mehryar Mohri</td>
+<td style="text-align:center"><code>algorithm problem algorithms learning show</code></td>
+<td style="text-align:center"><code>bounds algorithms algorithm optimization bound</code></td>
+<td style="text-align:center"><code>regret bounds fairness causal bound</code></td>
 </tr>
 <tr>
-<td align="center">Joan Bruna</td>
-<td align="center"><code>networks network neural model deep</code></td>
-<td align="center"><code>networks network deep generative neural</code></td>
-<td align="center"><code>dropout kernel adversarial gans generative</code></td>
+<td style="text-align:center">Joan Bruna</td>
+<td style="text-align:center"><code>networks network neural model deep</code></td>
+<td style="text-align:center"><code>networks network deep generative neural</code></td>
+<td style="text-align:center"><code>dropout kernel adversarial gans generative</code></td>
 </tr>
 <tr>
-<td align="center">Ian Goodfellow</td>
-<td align="center"><code>learning neural training models deep</code></td>
-<td align="center"><code>learning neural deep adversarial training</code></td>
-<td align="center"><code>adversarial dropout gans generative gan</code></td>
+<td style="text-align:center">Ian Goodfellow</td>
+<td style="text-align:center"><code>learning neural training models deep</code></td>
+<td style="text-align:center"><code>learning neural deep adversarial training</code></td>
+<td style="text-align:center"><code>adversarial dropout gans generative gan</code></td>
 </tr>
 <tr>
-<td align="center">Nicolas Papernot</td>
-<td align="center"><code>learning training data neural machine</code></td>
-<td align="center"><code>learning adversarial deep training machine</code></td>
-<td align="center"><code>adversarial dropout neurons gans genertive</code></td>
+<td style="text-align:center">Nicolas Papernot</td>
+<td style="text-align:center"><code>learning training data neural machine</code></td>
+<td style="text-align:center"><code>learning adversarial deep training machine</code></td>
+<td style="text-align:center"><code>adversarial dropout neurons gans genertive</code></td>
 </tr>
 <tr>
-<td align="center">Yann LeCun</td>
-<td align="center"><code>training networks deep learning show</code></td>
-<td align="center"><code>deep training networks neural adversarial</code></td>
-<td align="center"><code>adversarial dropout deep gans gan</code></td>
+<td style="text-align:center">Yann LeCun</td>
+<td style="text-align:center"><code>training networks deep learning show</code></td>
+<td style="text-align:center"><code>deep training networks neural adversarial</code></td>
+<td style="text-align:center"><code>adversarial dropout deep gans gan</code></td>
 </tr>
 <tr>
-<td align="center">Yoshua Bengio</td>
-<td align="center"><code>learning neural training networks models</code></td>
-<td align="center"><code>neural networks deep training learning</code></td>
-<td align="center"><code>adversarial dropout generative gans neurons</code></td>
+<td style="text-align:center">Yoshua Bengio</td>
+<td style="text-align:center"><code>learning neural training networks models</code></td>
+<td style="text-align:center"><code>neural networks deep training learning</code></td>
+<td style="text-align:center"><code>adversarial dropout generative gans neurons</code></td>
 </tr>
 <tr>
-<td align="center">Geoffrey E. Hinton</td>
-<td align="center"><code>data models learning model training</code></td>
-<td align="center"><code>models learning model neural training</code></td>
-<td align="center"><code>adversarial dropout generative gans rnn</code></td>
+<td style="text-align:center">Geoffrey E. Hinton</td>
+<td style="text-align:center"><code>data models learning model training</code></td>
+<td style="text-align:center"><code>models learning model neural training</code></td>
+<td style="text-align:center"><code>adversarial dropout generative gans rnn</code></td>
 </tr>
 </tbody>
 </table>
+
 <p>It seems that other than the computer vision folks, the model tend to assign more generic words that can be applied to <em>anybody</em> (such as <code>model</code>, <code>learning</code>, etc.) as top-ranked words.  This issue is more severe on the highest-ranked words: those words simply didn't tell us anything about the author's interest.</p>
 <h4>Inverse Document Frequency Regularizer?</h4>
 <p>Presumably, common words like <code>model</code>, <code>learning</code> should appear across a majority of the papers <em>regardless</em> of the actual topics.  Since we have L2 regularization on the word embeddings, words that appear more often would have a larger L2 norm than the rare ones.  And because we are computing the scores by dot products, the embeddings that have a bigger L2 norm will dominate the smaller ones.  For instance, in the model above, the embedding for <code>learning</code> has an L2 norm of 23.06, while the one for <code>policy</code> is only 5.68.</p>
@@ -371,84 +370,85 @@ $$</span><script type="math/tex; mode=display">
 </div>
 where <span><span class="MathJax_Preview">$C_i$</span><script type="math/tex">C_i</script></span> is the number of documents the word <span><span class="MathJax_Preview">$w_i$</span><script type="math/tex">w_i</script></span> showed up.  In stochastic gradient descent, <span><span class="MathJax_Preview">$C_i$</span><script type="math/tex">C_i</script></span> is simply counted from the documents in the minibatch.</p>
 <p>We evaluate the effect of this regularization both quantitatively and qualitatively.  For comparison, we counted the number of different words occurred in top-<span><span class="MathJax_Preview">$K$</span><script type="math/tex">K</script></span> ranking, and we compute the entropy of the normalized word occurrences.  Those having a more diverse list of proposed words should have a higher entropy.  We also give the median of author ranking and average precision to demonstrate how this regularization hurts our model:</p>
-<table>
+<table class="table-hover">
 <thead>
 <tr>
-<th align="center"><span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span></th>
-<th align="center">0</th>
-<th align="center">0.1</th>
-<th align="center">1</th>
+<th style="text-align:center"><span class="mathjax"><span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-3431-Frame" tabindex="0" data-mathml="<math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;><msub><mi>&amp;#x03BB;</mi><mi>c</mi></msub></math>" role="presentation" style="position: relative;"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-53008" style="width: 1.181em; display: inline-block;"><span style="display: inline-block; position: relative; width: 0.976em; height: 0px; font-size: 122%;"><span style="position: absolute; clip: rect(1.335em 1000.98em 2.513em -999.997em); top: -2.2em; left: 0em;"><span class="mrow" id="MathJax-Span-53009"><span class="msubsup" id="MathJax-Span-53010"><span style="display: inline-block; position: relative; width: 0.976em; height: 0px;"><span style="position: absolute; clip: rect(3.128em 1000.57em 4.152em -999.997em); top: -3.993em; left: 0em;"><span class="mi" id="MathJax-Span-53011" style="font-family: MathJax_Math; font-style: italic;">λ</span><span style="display: inline-block; width: 0px; height: 3.998em;"></span></span><span style="position: absolute; top: -3.84em; left: 0.566em;"><span class="mi" id="MathJax-Span-53012" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">c</span><span style="display: inline-block; width: 0px; height: 3.998em;"></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 2.205em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.247em; border-left: 0px solid; width: 0px; height: 1.191em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>λ</mi><mi>c</mi></msub></math></span></span><script type="math/tex" id="MathJax-Element-3431">\lambda_c</script></span></th>
+<th style="text-align:center">0</th>
+<th style="text-align:center">0.1</th>
+<th style="text-align:center">1</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td align="center"># of different words in top-1</td>
-<td align="center">76</td>
-<td align="center">101</td>
-<td align="center">84</td>
+<td style="text-align:center"># of different words in top-1</td>
+<td style="text-align:center">76</td>
+<td style="text-align:center">101</td>
+<td style="text-align:center">84</td>
 </tr>
 <tr>
-<td align="center"># of different words in top-5</td>
-<td align="center">159</td>
-<td align="center">221</td>
-<td align="center">207</td>
+<td style="text-align:center"># of different words in top-5</td>
+<td style="text-align:center">159</td>
+<td style="text-align:center">221</td>
+<td style="text-align:center">207</td>
 </tr>
 <tr>
-<td align="center"># of different words in top-10</td>
-<td align="center">234</td>
-<td align="center">332</td>
-<td align="center">314</td>
+<td style="text-align:center"># of different words in top-10</td>
+<td style="text-align:center">234</td>
+<td style="text-align:center">332</td>
+<td style="text-align:center">314</td>
 </tr>
 <tr>
-<td align="center">Entropy of top-1 word distribution</td>
-<td align="center">2.95</td>
-<td align="center">3.34</td>
-<td align="center">3.45</td>
+<td style="text-align:center">Entropy of top-1 word distribution</td>
+<td style="text-align:center">2.95</td>
+<td style="text-align:center">3.34</td>
+<td style="text-align:center">3.45</td>
 </tr>
 <tr>
-<td align="center">Entropy of top-5 word distribution</td>
-<td align="center">4.04</td>
-<td align="center">4.38</td>
-<td align="center">4.34</td>
+<td style="text-align:center">Entropy of top-5 word distribution</td>
+<td style="text-align:center">4.04</td>
+<td style="text-align:center">4.38</td>
+<td style="text-align:center">4.34</td>
 </tr>
 <tr>
-<td align="center">Entropy of top-10 word distribution</td>
-<td align="center">4.55</td>
-<td align="center">4.88</td>
-<td align="center">4.81</td>
+<td style="text-align:center">Entropy of top-10 word distribution</td>
+<td style="text-align:center">4.55</td>
+<td style="text-align:center">4.88</td>
+<td style="text-align:center">4.81</td>
 </tr>
 <tr>
-<td align="center">AP@1</td>
-<td align="center">0.027</td>
-<td align="center">0.023</td>
-<td align="center">0.017</td>
+<td style="text-align:center">AP@1</td>
+<td style="text-align:center">0.027</td>
+<td style="text-align:center">0.023</td>
+<td style="text-align:center">0.017</td>
 </tr>
 <tr>
-<td align="center">AP@5</td>
-<td align="center">0.020</td>
-<td align="center">0.018</td>
-<td align="center">0.012</td>
+<td style="text-align:center">AP@5</td>
+<td style="text-align:center">0.020</td>
+<td style="text-align:center">0.018</td>
+<td style="text-align:center">0.012</td>
 </tr>
 <tr>
-<td align="center">AP@10</td>
-<td align="center">0.023</td>
-<td align="center">0.021</td>
-<td align="center">0.014</td>
+<td style="text-align:center">AP@10</td>
+<td style="text-align:center">0.023</td>
+<td style="text-align:center">0.021</td>
+<td style="text-align:center">0.014</td>
 </tr>
 <tr>
-<td align="center">AP@50</td>
-<td align="center">0.028</td>
-<td align="center">0.026</td>
-<td align="center">0.017</td>
+<td style="text-align:center">AP@50</td>
+<td style="text-align:center">0.028</td>
+<td style="text-align:center">0.026</td>
+<td style="text-align:center">0.017</td>
 </tr>
 <tr>
-<td align="center">Median of ranking</td>
-<td align="center">544</td>
-<td align="center">548</td>
-<td align="center">727</td>
+<td style="text-align:center">Median of ranking</td>
+<td style="text-align:center">544</td>
+<td style="text-align:center">548</td>
+<td style="text-align:center">727</td>
 </tr>
 </tbody>
 </table>
+
 <p>The top-ranked words for the authors with non-zero <span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span> is shown above.  We can see that when <span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span> is too big, rare words did occur more frequently --- but the model also fills rare words in random places (e.g. <code>adversarial</code> and <code>gan</code> seems to be all over the place).</p>
 <h4>Embedding visualizations</h4>
 <p>I tabulated the embeddings of authors which occurred more than 5 times:</p>

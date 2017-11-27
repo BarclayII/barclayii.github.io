@@ -75,7 +75,7 @@ table {
   max-width: 100%;
   background-color: transparent;
   border-collapse: collapse;
-  border-spacing: 5;
+  border-spacing: 0;
 }
 
 .table {
