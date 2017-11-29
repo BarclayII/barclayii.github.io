@@ -4,10 +4,10 @@
 <head>
   <link href='//fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,400italic' rel='stylesheet' type='text/css'>
 
-    <link rel="stylesheet" type="text/css" href="/theme/stylesheet/style.min.css">
+    <link rel="stylesheet" type="text/css" href="https://barclayii.github.io/theme/stylesheet/style.min.css">
 
-  <link rel="stylesheet" type="text/css" href="/theme/pygments/github.min.css">
-  <link rel="stylesheet" type="text/css" href="/theme/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="https://barclayii.github.io/theme/pygments/github.min.css">
+  <link rel="stylesheet" type="text/css" href="https://barclayii.github.io/theme/font-awesome/css/font-awesome.min.css">
 
 
 
@@ -27,11 +27,11 @@
 <meta property="og:title" content="Authorship Attribution and Topic Discovery"/>
 <meta property="og:description" content="As a project for Inference and Representation course in NYU, me and this guy decided to do some modeling of academic author interests. Such model would have several practical applications: Recommending latest papers to researchers, like what Mendeley and Microsoft Academic (MSA) does. Recommending the researchers to each other on …"/>
 <meta property="og:locale" content="en_US"/>
-<meta property="og:url" content="/authorship-attribution-and-topic-discovery.html"/>
+<meta property="og:url" content="https://barclayii.github.io/authorship-attribution-and-topic-discovery.html"/>
 <meta property="og:type" content="article"/>
-<meta property="article:published_time" content="2017-11-27 04:09:53.448878-05:00"/>
+<meta property="article:published_time" content="2017-11-28 22:46:41.868245-05:00"/>
 <meta property="article:modified_time" content=""/>
-<meta property="article:author" content="/author/quan-gan-andy.html">
+<meta property="article:author" content="https://barclayii.github.io/author/quan-gan-andy.html">
 <meta property="article:section" content="nlp"/>
 <meta property="article:tag" content="nlp"/>
 <meta property="article:tag" content="word-embedding"/>
@@ -44,10 +44,10 @@
 <body>
   <aside>
     <div>
-      <a href="">
-        <img src="/theme/img/profile.png" alt="Quan Gan (Andy)" title="Quan Gan (Andy)">
+      <a href="https://barclayii.github.io">
+        <img src="https://barclayii.github.io/theme/img/profile.png" alt="Quan Gan (Andy)" title="Quan Gan (Andy)">
       </a>
-      <h1><a href="">Quan Gan (Andy)</a></h1>
+      <h1><a href="https://barclayii.github.io">Quan Gan (Andy)</a></h1>
 
 <p>Data Science MS Student, NYU</p>
 
@@ -62,7 +62,7 @@
   <main>
 
     <nav>
-      <a href="">    Home
+      <a href="https://barclayii.github.io">    Home
 </a>
 
       <a href="/archives.html">Archives</a>
@@ -76,7 +76,7 @@
   <header>
     <h1 id="authorship-attribution-and-topic-discovery">Authorship Attribution and Topic Discovery</h1>
     <p>
-          Posted on Mon 27 November 2017 in <a href="/category/nlp.html">nlp</a>
+          Posted on Tue 28 November 2017 in <a href="https://barclayii.github.io/category/nlp.html">nlp</a>
 
 
     </p>
@@ -380,7 +380,7 @@ $$</span><script type="math/tex; mode=display">
 </tr>
 </tbody>
 </table>
-<p>In the vanilla case (where there is no <span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span>, it seems that other than the computer vision folks, the model tend to assign more generic words that can be applied to <em>anybody</em> (such as <code>model</code>, <code>learning</code>, etc.) as top-ranked words.  This issue is more severe on the highest-ranked words: those words simply didn't tell us anything about the author's interest.</p>
+<p>In the vanilla case (where there is no <span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span>), it seems that other than the computer vision folks, the model tend to assign more generic words that can be applied to <em>anybody</em> (such as <code>model</code>, <code>learning</code>, etc.) as top-ranked words.  This issue is more severe on the highest-ranked words: those words simply didn't tell us anything about the author's interest.</p>
 <h4>Inverse Document Frequency Regularizer?</h4>
 <p>Presumably, common words like <code>model</code>, <code>learning</code> should appear across a majority of the papers <em>regardless</em> of the actual topics.  Since we have L2 regularization on the word embeddings, words that appear more often would have a larger L2 norm than the rare ones.  And because we are computing the scores by dot products, the embeddings that have a bigger L2 norm will dominate the smaller ones.  For instance, in the model above, the embedding for <code>learning</code> has an L2 norm of 23.06, while the one for <code>policy</code> is only 5.68.</p>
 <p>Penalizing the norm of the more frequent words should help.  However, we probably don't want to regularize a word that occurs frequently in a <em>single</em> document but nowhere else; such word is very likely informative.  Therefore, we only want to penalize the word based on <em>the number of documents where the word showed up</em>.  We can regard this idea as an analogy to inverse document frequency (IDF).</p>
@@ -471,7 +471,14 @@ where <span><span class="MathJax_Preview">$C_i$</span><script type="math/tex">C_
 </tr>
 </tbody>
 </table>
-<p>The top-ranked words for the authors with non-zero <span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span> is shown above.  We can see that when <span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span> is too big, rare words did occur more frequently --- but the model also fills rare words in random places (e.g. <code>adversarial</code> and <code>gan</code> seems to be all over the place).</p>
+<p>When I designed this IDF regularizer, I assumed that increasing <span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span> would consistently increase the "specificity" of word proposals.  The experiment shows that buffing up <span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span> too much would instead kill off the diversity of proposals.  In retrospect, this makes sense because the frequent-but-informative words get killed as well.</p>
+<p>The top-ranked words for the authors with non-zero <span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span> is shown above.  We can see that when <span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span> is too big, rare words did occur more frequently, even at the cost of killing the common-but-informative words:</p>
+<ul>
+<li><code>adversarial</code> and <code>gan</code> seems to be all over the place.</li>
+<li><code>video</code> is preferred over <code>image</code>, even though the author did not publish a lot of works about video (e.g. Kaiming He).</li>
+<li><code>word</code> consistently beats <code>language</code>, although they sound equally informative to me (i.e. they are both significant indicator of NLP, but nothing more).</li>
+<li>I don't know how <code>quantum</code> gets in Daphne Koller's list.</li>
+</ul>
 <h4>Embedding visualizations</h4>
 <p>I tabulated the embeddings of authors which occurred more than 5 times:</p>
 <ul>
@@ -485,12 +492,27 @@ where <span><span class="MathJax_Preview">$C_i$</span><script type="math/tex">C_
 </ul>
 </li>
 </ul>
+<p>Tensorflow Projector is an awesome tool as it runs T-SNE and PCA in your browser, and allows searching for nearest neighbor in terms of cosine distance or L2 distance.  Feel free to search for your neighbors <del>and evaluate my model's performance</del>!</p>
+<p>I also tabulated the words which occurred more than 5 times:
+* <a href="https://raw.githubusercontent.com/BruceChaun/ArxivInference/master/projector-word-lambda%3D0.1.json">Word embedding with <span><span class="MathJax_Preview">$\lambda_c=0.1$</span><script type="math/tex">\lambda_c=0.1</script></span></a>
+    * <a href="http://projector.tensorflow.org/?config=https://raw.githubusercontent.com/BruceChaun/ArxivInference/master/projector-word-lambda%3D0.1.json">See on Tensorflow Projector</a></p>
+<p>The PCA of the words looks like this:</p>
+<p><img alt="" src="https://barclayii.github.io/images/author-projector-word-embedding.png"></p>
+<p>The result seems a bit satisfactory:</p>
+<ul>
+<li>Computer-vision-related words are placed on top left.</li>
+<li>Language-related words are placed at top right.</li>
+<li>The words at the top are more or less focused on practical applications.</li>
+<li>The words at the bottom seems all about theory and optimization.</li>
+<li>Interestingly, the word <code>state-of-the-art</code> sits at the top-left, surrounded by computer vision words.  <strong>This doesn't mean that getting state-of-the-art result in computer vision is easy, nor easier than other fields</strong>.</li>
+<li>We can also see that the word <code>future</code> sits at the top-right, close to the NLP-ish words.  <strong>This doesn't say that NLP is the <em>only</em> future</strong>.</li>
+</ul>
   </div>
   <div class="tag-cloud">
     <p>
-      <a href="/tag/nlp.html">nlp</a>
-      <a href="/tag/word-embedding.html">word-embedding</a>
-      <a href="/tag/shallow.html">shallow</a>
+      <a href="https://barclayii.github.io/tag/nlp.html">nlp</a>
+      <a href="https://barclayii.github.io/tag/word-embedding.html">word-embedding</a>
+      <a href="https://barclayii.github.io/tag/shallow.html">shallow</a>
     </p>
   </div>
 
@@ -514,7 +536,7 @@ where <span><span class="MathJax_Preview">$C_i$</span><script type="math/tex">C_
   "@context" : "http://schema.org",
   "@type" : "Blog",
   "name": " Quan Gan (Andy) @ NYU ",
-  "url" : "",
+  "url" : "https://barclayii.github.io",
   "image": "",
   "description": "Random notes on Machine Learning (Deep Learning in particular)"
 }
