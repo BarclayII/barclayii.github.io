@@ -1,0 +1,603 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link href='//fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,400italic' rel='stylesheet' type='text/css'>
+
+    <link rel="stylesheet" type="text/css" href="https://barclayii.github.io/theme/stylesheet/style.min.css">
+
+  <link rel="stylesheet" type="text/css" href="https://barclayii.github.io/theme/pygments/github.min.css">
+  <link rel="stylesheet" type="text/css" href="https://barclayii.github.io/theme/font-awesome/css/font-awesome.min.css">
+
+
+
+
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="HandheldFriendly" content="True" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="index, follow" />
+
+
+<meta name="author" content="Quan Gan (Andy)" />
+<meta name="description" content="Recently, I was collaborating with other people working on a library dealing with graph-based data. We started with networkx, which has a plethora of graph algorithms and generators. It is good for initial development, but soon we realized that even basic operations (say, asking for predecessors of a list of …" />
+<meta name="keywords" content="python, c/c++, cython, swig">
+<meta property="og:site_name" content="Quan Gan (Andy) @ NYU"/>
+<meta property="og:title" content="Building your own graph library with C as a Python exntension - Introduction (Step 1)"/>
+<meta property="og:description" content="Recently, I was collaborating with other people working on a library dealing with graph-based data. We started with networkx, which has a plethora of graph algorithms and generators. It is good for initial development, but soon we realized that even basic operations (say, asking for predecessors of a list of …"/>
+<meta property="og:locale" content="en_US"/>
+<meta property="og:url" content="https://barclayii.github.io/building-your-own-graph-library-with-c-as-a-python-exntension-introduction-step-1.html"/>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2018-09-26 01:55:23.795813-04:00"/>
+<meta property="article:modified_time" content=""/>
+<meta property="article:author" content="https://barclayii.github.io/author/quan-gan-andy.html">
+<meta property="article:section" content="systems"/>
+<meta property="article:tag" content="python"/>
+<meta property="article:tag" content="c/c++"/>
+<meta property="article:tag" content="cython"/>
+<meta property="article:tag" content="swig"/>
+<meta property="og:image" content="">
+
+  <title>Quan Gan (Andy) @ NYU &ndash; Building your own graph library with C as a Python exntension - Introduction (Step 1)</title>
+
+</head>
+<body>
+  <aside>
+    <div>
+      <a href="https://barclayii.github.io">
+        <img src="https://barclayii.github.io/theme/img/profile.png" alt="Quan Gan (Andy)" title="Quan Gan (Andy)">
+      </a>
+      <h1><a href="https://barclayii.github.io">Quan Gan (Andy)</a></h1>
+
+<p>Data Science MS Student, NYU</p>
+
+      <ul class="social">
+        <li><a class="sc-github" href="https://github.com/BarclayII" target="_blank"><i class="fa fa-github"></i></a></li>
+        <li><a class="sc-linkedin" href="https://www.linkedin.com/in/quan-gan-231992136/" target="_blank"><i class="fa fa-linkedin"></i></a></li>
+      </ul>
+    </div>
+
+
+  </aside>
+  <main>
+
+    <nav>
+      <a href="https://barclayii.github.io">    Home
+</a>
+
+      <a href="/archives.html">Archives</a>
+      <a href="/categories.html">Categories</a>
+      <a href="/tags.html">Tags</a>
+
+
+    </nav>
+
+<article class="single">
+  <header>
+    <h1 id="building-your-own-graph-library-with-c-as-a-python-exntension-introduction-step-1">Building your own graph library with C as a Python exntension - Introduction (Step 1)</h1>
+    <p>
+          Posted on Wed 26 September 2018 in <a href="https://barclayii.github.io/category/systems.html">systems</a>
+
+
+    </p>
+  </header>
+
+
+  <div>
+    <p>Recently, I was collaborating with other people working on a library dealing with graph-based data.  We started with <a href="https://networkx.github.io/"><code>networkx</code></a>, which has a plethora of graph algorithms and generators.  It is good for initial development, but soon we realized that even basic operations (say, asking for predecessors of a list of nodes) are slow due to the entire data structure being handled in pure Python.  We then replaced a part of the internals with <a href="http://igraph.org/python/"><code>igraph</code></a>.  While it is significantly faster than <code>networkx</code>.  But still we wish to have a more focused version which only focuses on basic graph operations, and potentially, extend the storage to cross-devices (like multiple CPU/GPUs and multiple machines), as well as having other low-level, performance-critical features.</p>
+<p>In summary, if we need</p>
+<ul>
+<li>Performance-critical (otherwise why bother?)</li>
+<li>Frequent (otherwise maybe the overhead of having it in Python is bearable)</li>
+<li>Low-level (meaning that the package users wouldn't care a lot about the details)</li>
+<li>Reasonably-clear implementations (e.g. for a neural network module, even if it is performance-critical, frequent, and low-level, probably it's still better, or only possible, to write it in PyTorch/Tensorflow)</li>
+</ul>
+<p>Then it's better to wrap the code into C and make a Python package.</p>
+<p>Figuring out how to interface Python with C took me a lot more effort than I expected, so I put what I found inside this tutorial series.  Note that I may change my views in this series, so expect changes in the articles.</p>
+<p>In this tutorial series, I will go through the implementation of a miniature graph library, which is a subset of <code>igraph</code>.  I hope to have an appropriate design that decouples the graph storage, attributes storage, and the user interfaces.  I tend to write everything in pure C, or maybe a very restricted subset of C++ (C++ has way too many features, and moreover I'm not an expert on everything).</p>
+<p>The platform I am developing on will be POSIX-compliant (e.g. Linux or <a href="http://cygwin.com/">Cygwin</a>).</p>
+<h3>What tool to use?</h3>
+<p><a href="https://github.com/cython/cython/wiki/WrappingCorCpp">Cython Wiki</a> has a list of C-Python interfaces, and in particular I like the following:</p>
+<ul>
+<li><a href="http://cython.org/">Cython</a></li>
+<li><a href="http://www.swig.org/">SWIG</a></li>
+<li><a href="https://docs.python.org/3/library/ctypes.html"><code>ctypes</code></a></li>
+</ul>
+<p>If I still have time, I will go through other fancy ways of interfacing Python with C/C++, such as the runtime from <a href="https://docs.tvm.ai/dev/runtime.html">TVM</a>.  But for now, let's begin with the easier ones.</p>
+<p>Here is a list of pros and cons I found personally for the three methods:</p>
+<ul>
+<li>Cython is a typical three-layer design of interfacing: C at the bottom, Python at the top, and Cython in between.  The syntax of Cython is very similar to Python, so heavy Python developers familiar with C/C++ should feel comfortable.</li>
+<li>SWIG is a simple yet more general-purposed framework that can generate wrappers for <em>a lot of</em> languages, including Perl/Ruby/Javascript/Lua.  Similar to Cython, it also adopts a three-layer design.  The only difference I found is that SWIG syntax more resembles C (well, if you know Flex/Bison, then you should get the idea), hence less integrated with Python.  If developers wish to support other scripting languages then they should consider using SWIG.</li>
+<li><code>ctypes</code> is probably the easiest to catch up since it literally calls C functions with Python code.  <code>ctypes</code> has its own data types that directly maps to C data types (<code>struct</code>'s, pointers, etc.).  As a result, <code>ctypes</code> code don't usually feel... "Pythonic".  The problem of this approach is that the developers themselves may have to write their own interface between Python and C if they don't wish to scatter <code>ctypes</code> code around the Python source files.  Also, since you are directly making calls to a C library, <code>ctypes</code> does not prevent you doing weird stuff (e.g. passing an integer as a <code>struct</code> pointer argument).</li>
+</ul>
+<p>For the reasons above, I will mostly focus on Cython, and occasionally SWIG, as the tool for gluing C and Python together.</p>
+<h3>The starting C code</h3>
+<p>First we will write some C code to provide toy implementation of a C structure called <code>struct graph</code>.  For now, it is only a structure consisting of two integer elements, with two functions creating and destroying the objects (which is called <em>constructor</em> and <em>destructor</em> in object-oriented programming), and two methods for incrementing those elements.  In later articles, I will extend it to actual methods to add vertices and edges into a graph.</p>
+<div class="highlight"><pre><span></span><span class="cm">/*</span>
+<span class="cm"> * include/graph.h</span>
+<span class="cm"> */</span>
+
+<span class="cp">#ifndef _GRAPH_H</span>
+<span class="cp">#define _GRAPH_H</span>
+
+<span class="cp">#include</span> <span class="cpf">&lt;stdint.h&gt;</span><span class="cp"></span>
+
+<span class="k">typedef</span> <span class="kt">uint64_t</span> <span class="n">pgraph_size_t</span><span class="p">;</span>
+<span class="k">typedef</span> <span class="kt">int64_t</span> <span class="n">pgraph_ssize_t</span><span class="p">;</span>
+
+<span class="k">struct</span> <span class="n">graph</span> <span class="p">{</span>
+    <span class="n">pgraph_size_t</span>   <span class="n">n_vertices</span><span class="p">;</span>
+    <span class="n">pgraph_size_t</span>   <span class="n">n_edges</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">struct</span> <span class="n">graph</span> <span class="o">*</span><span class="nf">graph_create</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+<span class="kt">int</span> <span class="nf">graph_destroy</span><span class="p">(</span><span class="k">struct</span> <span class="n">graph</span> <span class="o">*</span><span class="n">g</span><span class="p">);</span>
+<span class="n">pgraph_ssize_t</span> <span class="nf">graph_add_vertices</span><span class="p">(</span><span class="k">struct</span> <span class="n">graph</span> <span class="o">*</span><span class="n">g</span><span class="p">,</span> <span class="n">pgraph_size_t</span> <span class="n">n_vertices</span><span class="p">);</span>
+<span class="n">pgraph_ssize_t</span> <span class="nf">graph_add_edges</span><span class="p">(</span><span class="k">struct</span> <span class="n">graph</span> <span class="o">*</span><span class="n">g</span><span class="p">,</span> <span class="n">pgraph_size_t</span> <span class="n">n_edges</span><span class="p">);</span>
+
+<span class="cp">#endif</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="cm">/*</span>
+<span class="cm"> * src/graph.c</span>
+<span class="cm"> */</span>
+
+<span class="cp">#include</span> <span class="cpf">&lt;stdlib.h&gt;</span><span class="cp"></span>
+
+<span class="cp">#include</span> <span class="cpf">&quot;graph.h&quot;</span><span class="cp"></span>
+
+<span class="k">struct</span> <span class="n">graph</span> <span class="o">*</span><span class="nf">graph_create</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">struct</span> <span class="n">graph</span> <span class="o">*</span><span class="n">g</span><span class="p">;</span>
+
+    <span class="n">g</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">g</span><span class="p">));</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">g</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">g</span><span class="p">;</span>
+
+    <span class="n">g</span><span class="o">-&gt;</span><span class="n">n_vertices</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="n">g</span><span class="o">-&gt;</span><span class="n">n_edges</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="n">g</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">graph_destroy</span><span class="p">(</span><span class="k">struct</span> <span class="n">graph</span> <span class="o">*</span><span class="n">g</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">free</span><span class="p">(</span><span class="n">g</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">pgraph_ssize_t</span> <span class="nf">graph_add_vertices</span><span class="p">(</span><span class="k">struct</span> <span class="n">graph</span> <span class="o">*</span><span class="n">g</span><span class="p">,</span> <span class="n">pgraph_size_t</span> <span class="n">n_vertices</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">g</span><span class="o">-&gt;</span><span class="n">n_vertices</span> <span class="o">+=</span> <span class="n">n_vertices</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="n">n_vertices</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">pgraph_ssize_t</span> <span class="nf">graph_add_edges</span><span class="p">(</span><span class="k">struct</span> <span class="n">graph</span> <span class="o">*</span><span class="n">g</span><span class="p">,</span> <span class="n">pgraph_size_t</span> <span class="n">n_edges</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">g</span><span class="o">-&gt;</span><span class="n">n_edges</span> <span class="o">+=</span> <span class="n">n_edges</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="n">n_edges</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>To better manage the code base, we make two directories:</p>
+<ul>
+<li><code>src/</code>, for keeping C source files.</li>
+<li><code>include/</code>, for keeping C headers.</li>
+</ul>
+<p>The directory tree structure will look like this:</p>
+<div class="highlight"><pre><span></span>.
+├── include
+│   └── graph.h
+└── src
+    └── graph.c
+</pre></div>
+
+
+<p>Now, we would like to expose the structure as a Python class.  How could we do that?</p>
+<h3>Using Cython</h3>
+<h4>The interface file</h4>
+<p>Let's go through using Cython first.</p>
+<p>In general, Cython reads in an interface file, usually having extension <code>.pyx</code>, and outputs a C file which can be compiled into a shared library (or DLL on Windows).  Cython interface files usually need to</p>
+<ul>
+<li>Declare the C interfaces (structures/unions/functions/...) we wish to use.</li>
+<li>Declare the Python interfaces we wish to expose.</li>
+</ul>
+<p>A simple Cython interface looks like the following:</p>
+<div class="highlight"><pre><span></span><span class="c"># pgraph.pyx</span>
+<span class="k">from</span> <span class="nn">libc.stdint</span> <span class="k">cimport</span> <span class="n">uint64_t</span><span class="p">,</span> <span class="n">int64_t</span>
+
+<span class="c"># First part is to declare the C interfaces we wish to use.</span>
+<span class="c"># You can see that the declarations resembles to the actual C header file</span>
+<span class="c"># (&quot;include/graph.h&quot;) a lot.</span>
+
+<span class="c"># &quot;cdef extern from&quot; tells Cython that these declarations come from the</span>
+<span class="c"># header file you specified.</span>
+<span class="k">cdef</span> <span class="kr">extern</span> <span class="k">from</span> <span class="s">&quot;../include/graph.h&quot;</span><span class="p">:</span>
+    <span class="c"># ctypedef is the Cython equivalent of C typedef.</span>
+    <span class="k">ctypedef</span> <span class="n">uint64_t</span> <span class="n">pgraph_size_t</span>
+    <span class="k">ctypedef</span> <span class="n">int64_t</span> <span class="n">pgraph_ssize_t</span>
+
+    <span class="c"># A Cython struct corresponds to a C struct.  The only difference is that</span>
+    <span class="c"># we don&#39;t have to cover all the members in the corresponding C struct;</span>
+    <span class="c"># we only need to write about the members we intend to expose to the Python</span>
+    <span class="c"># classes.</span>
+    <span class="k">struct</span> <span class="nc">graph</span><span class="p">:</span>
+        <span class="n">pgraph_size_t</span> <span class="n">n_vertices</span>
+        <span class="n">pgraph_size_t</span> <span class="n">n_edges</span>
+
+    <span class="c"># The function prototypes we wish to use.</span>
+    <span class="n">graph</span> <span class="o">*</span><span class="n">graph_create</span><span class="p">()</span>
+    <span class="nb">int</span> <span class="n">graph_destroy</span><span class="p">(</span><span class="n">graph</span> <span class="o">*</span><span class="n">g</span><span class="p">)</span>
+    <span class="n">pgraph_ssize_t</span> <span class="n">graph_add_vertices</span><span class="p">(</span><span class="n">graph</span> <span class="o">*</span><span class="n">g</span><span class="p">,</span> <span class="n">pgraph_size_t</span> <span class="n">n_vertices</span><span class="p">)</span>
+    <span class="n">pgraph_ssize_t</span> <span class="n">graph_add_edges</span><span class="p">(</span><span class="n">graph</span> <span class="o">*</span><span class="n">g</span><span class="p">,</span> <span class="n">pgraph_size_t</span> <span class="n">n_edges</span><span class="p">)</span>
+
+
+<span class="c"># The second part defines the actual Python class that uses the C code.</span>
+<span class="c"># Usually, it&#39;s called a &quot;cdef&quot; class.</span>
+<span class="c">#</span>
+<span class="c"># You write it as if you are writing Python code, barring a few notable</span>
+<span class="c"># differences:</span>
+<span class="c"># (1) A &quot;cdef&quot; class is always declared by &quot;cdef class&quot; (of course)</span>
+<span class="k">cdef</span> <span class="k">class</span> <span class="nf">Graph</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="c"># (2) You need to declare the attributes you are going to use beforehand.</span>
+    <span class="c"># By default, these attributes are &quot;private&quot;, meaning that external</span>
+    <span class="c"># Python code is not available to see them.  Of course, you can make</span>
+    <span class="c"># them public.</span>
+    <span class="k">cdef</span> <span class="kt">graph</span> *<span class="nf">_handle</span>
+
+    <span class="c"># (3) Any initializations involving C code is done in __cinit__() rather</span>
+    <span class="c"># than __init__().  This is the best place to, e.g., create a C graph</span>
+    <span class="c"># object (using malloc(3)) and store the pointer as a handle.</span>
+    <span class="k">def</span> <span class="nf">__cinit__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">_handle</span> <span class="o">=</span> <span class="n">graph_create</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">_handle</span> <span class="ow">is</span> <span class="bp">NULL</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">MemoryError</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_handle</span> <span class="o">=</span> <span class="n">_handle</span>
+
+    <span class="c"># (4) Any C-level finalization involving C code is done in __dealloc__(),</span>
+    <span class="c"># and there is no __del__() method.  Code destroying C objects (using</span>
+    <span class="c"># free(3)) should be here.</span>
+    <span class="k">def</span> <span class="nf">__dealloc__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">NULL</span><span class="p">:</span>
+            <span class="n">graph_destroy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_handle</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_handle</span> <span class="o">=</span> <span class="bp">NULL</span>
+
+    <span class="c"># (5) Optionally, you can enforce type checks on function arguments like</span>
+    <span class="c"># this.</span>
+    <span class="k">def</span> <span class="nf">add_vertices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pgraph_size_t</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">graph_add_vertices</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_handle</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pgraph_size_t</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">graph_add_edges</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_handle</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">n_vertices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle</span><span class="o">.</span><span class="n">n_vertices</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">n_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle</span><span class="o">.</span><span class="n">n_edges</span>
+</pre></div>
+
+
+<p>Now let's put the file above in a separate directory called <code>cython</code>.  The tree will look like this:</p>
+<div class="highlight"><pre><span></span>.
+├── cython
+│   └── pgraph.pyx
+├── include
+│   └── graph.h
+└── src
+    └── graph.c
+</pre></div>
+
+
+<h4>Building the package</h4>
+<p>Before actually going into details about the building systems such as <a href="https://setuptools.readthedocs.io/en/latest/"><code>setuptools</code></a> or <a href="https://cmake.org/">CMake</a>, let's go through the basics of building the Python package manually by entering shell commands, to grasp an idea of how the building process looks like.</p>
+<ol>
+<li>First, we need to translate the Cython interface into a C source file:
+    <code>$ cython cython/pgraph.pyx</code>
+    This command will let Cython translate the files you have supplied into corresponding C files (<code>cython/pgraph.c</code> in this case).</li>
+<li>Then, compile the Cython output as well as the C source code we have written.  Assuming that we have development files for Python 3 installed and we are using <a href="https://www.gnu.org/software/gcc/">GCC</a>, the commands will be something like:
+    <code>$ gcc -fpic -c -o cython/pgraph.o `pkg-config --cflags python3` cython/pgraph.c
+    $ gcc -fpic -c -o src/graph.o -I./include src/graph.c</code>
+    The contents inside the backquotes will be replaced by the shell with the output of the command inside, and <code>pkg-config</code> is a tool that generates appropriate C compiler and linker flags for the given package you wish to compile/link with (in our case, Python 3).</li>
+<li>Finally, link the two object files together with the Python 3 library:
+    <code>$ gcc -shared -fpic -o pgraph`python3-config --extension-suffix` cython/pgraph.o src/graph.o `pkg-config --libs python3`</code>
+    On Linux, this will generate a shared library file named something like <code>pgraph.cpython-36m-x86_64-linux-gnu.so</code>.  The long suffix after <code>pgraph</code> is specified by the command <code>python3-config --extension-suffix</code>; Python automatically identifies shared libraries having such kind of suffix as "Python modules", and tries to import from that if you run <code>import pgraph</code> in Python.</li>
+</ol>
+<h4>Now let's test!</h4>
+<div class="highlight"><pre><span></span><span class="err">$</span> <span class="n">ipython</span>
+<span class="n">Python</span> <span class="mf">3.6</span><span class="o">.</span><span class="mi">6</span> <span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="n">Jul</span> <span class="mi">19</span> <span class="mi">2018</span><span class="p">,</span> <span class="mi">14</span><span class="p">:</span><span class="mi">25</span><span class="p">:</span><span class="mi">17</span><span class="p">)</span> 
+<span class="n">Type</span> <span class="s1">&#39;copyright&#39;</span><span class="p">,</span> <span class="s1">&#39;credits&#39;</span> <span class="ow">or</span> <span class="s1">&#39;license&#39;</span> <span class="k">for</span> <span class="n">more</span> <span class="n">information</span>
+<span class="n">IPython</span> <span class="mf">6.5</span><span class="o">.</span><span class="mi">0</span> <span class="o">--</span> <span class="n">An</span> <span class="n">enhanced</span> <span class="n">Interactive</span> <span class="n">Python</span><span class="o">.</span> <span class="n">Type</span> <span class="s1">&#39;?&#39;</span> <span class="k">for</span> <span class="n">help</span><span class="o">.</span>
+
+<span class="n">In</span> <span class="p">[</span><span class="mi">1</span><span class="p">]:</span> <span class="kn">import</span> <span class="nn">pgraph</span>
+
+<span class="n">In</span> <span class="p">[</span><span class="mi">2</span><span class="p">]:</span> <span class="n">g</span> <span class="o">=</span> <span class="n">pgraph</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+
+<span class="n">In</span> <span class="p">[</span><span class="mi">3</span><span class="p">]:</span> <span class="n">g</span><span class="o">.</span><span class="n">n_vertices</span>
+<span class="n">Out</span><span class="p">[</span><span class="mi">3</span><span class="p">]:</span> <span class="mi">0</span>
+
+<span class="n">In</span> <span class="p">[</span><span class="mi">4</span><span class="p">]:</span> <span class="n">g</span><span class="o">.</span><span class="n">add_vertices</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">Out</span><span class="p">[</span><span class="mi">4</span><span class="p">]:</span> <span class="mi">8</span>
+
+<span class="n">In</span> <span class="p">[</span><span class="mi">5</span><span class="p">]:</span> <span class="n">g</span><span class="o">.</span><span class="n">n_vertices</span>
+<span class="n">Out</span><span class="p">[</span><span class="mi">5</span><span class="p">]:</span> <span class="mi">8</span>
+
+<span class="n">In</span> <span class="p">[</span><span class="mi">6</span><span class="p">]:</span> <span class="n">g</span><span class="o">.</span><span class="n">add_vertices</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
+<span class="o">---------------------------------------------------------------------------</span>
+<span class="ne">TypeError</span>                                 <span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">)</span>
+<span class="o">&lt;</span><span class="n">ipython</span><span class="o">-</span><span class="nb">input</span><span class="o">-</span><span class="mi">6</span><span class="o">-</span><span class="n">d716880dabd7</span><span class="o">&gt;</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span><span class="p">()</span>
+<span class="o">----&gt;</span> <span class="mi">1</span> <span class="n">g</span><span class="o">.</span><span class="n">add_vertices</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
+
+<span class="o">~/</span><span class="n">ML</span><span class="o">/</span><span class="n">python</span><span class="o">-</span><span class="n">pgraph</span><span class="o">/</span><span class="n">cython</span><span class="o">/</span><span class="n">pgraph</span><span class="o">.</span><span class="n">pyx</span> <span class="ow">in</span> <span class="n">pgraph</span><span class="o">.</span><span class="n">Graph</span><span class="o">.</span><span class="n">add_vertices</span><span class="p">()</span>
+     <span class="mi">54</span>     <span class="c1"># (5) Optionally, you can enforce type checks on function arguments like</span>
+     <span class="mi">55</span>     <span class="c1"># this.</span>
+<span class="o">---&gt;</span> <span class="mi">56</span>     <span class="k">def</span> <span class="nf">add_vertices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pgraph_size_t</span> <span class="n">n</span><span class="p">):</span>
+     <span class="mi">57</span>         <span class="k">return</span> <span class="n">graph_add_vertices</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_handle</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+     <span class="mi">58</span> 
+
+<span class="ne">TypeError</span><span class="p">:</span> <span class="n">an</span> <span class="n">integer</span> <span class="ow">is</span> <span class="n">required</span>
+
+<span class="n">In</span> <span class="p">[</span><span class="mi">7</span><span class="p">]:</span> <span class="nb">exit</span>
+</pre></div>
+
+
+<h4>Caveats</h4>
+<p>When importing a Python module from a shared library, Python looks for the C function <code>PyInit_&lt;module-name&gt;</code> in that library as the module entry call.  Cython generates the entry call by looking at the file name instead (e.g. when translating <code>foo.pyx</code>, Cython will generate the entry call named <code>PyInit_foo()</code>).  So when the two names does not match, Python import will fail:</p>
+<div class="highlight"><pre><span></span><span class="err">$</span> <span class="n">mv</span> <span class="n">pgraph</span><span class="o">.</span><span class="n">cpython</span><span class="o">-</span><span class="mi">36</span><span class="n">m</span><span class="o">-</span><span class="n">x86_64</span><span class="o">-</span><span class="n">linux</span><span class="o">-</span><span class="n">gnu</span><span class="o">.</span><span class="n">so</span> <span class="n">foo</span><span class="o">.</span><span class="n">cpython</span><span class="o">-</span><span class="mi">36</span><span class="n">m</span><span class="o">-</span><span class="n">x86_64</span><span class="o">-</span><span class="n">linux</span><span class="o">-</span><span class="n">gnu</span><span class="o">.</span><span class="n">so</span> 
+<span class="err">$</span> <span class="n">ipython3</span>
+<span class="n">Python</span> <span class="mf">3.6</span><span class="o">.</span><span class="mi">6</span> <span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="n">Jul</span> <span class="mi">19</span> <span class="mi">2018</span><span class="p">,</span> <span class="mi">14</span><span class="p">:</span><span class="mi">25</span><span class="p">:</span><span class="mi">17</span><span class="p">)</span> 
+<span class="n">Type</span> <span class="s1">&#39;copyright&#39;</span><span class="p">,</span> <span class="s1">&#39;credits&#39;</span> <span class="ow">or</span> <span class="s1">&#39;license&#39;</span> <span class="k">for</span> <span class="n">more</span> <span class="n">information</span>
+<span class="n">IPython</span> <span class="mf">6.5</span><span class="o">.</span><span class="mi">0</span> <span class="o">--</span> <span class="n">An</span> <span class="n">enhanced</span> <span class="n">Interactive</span> <span class="n">Python</span><span class="o">.</span> <span class="n">Type</span> <span class="s1">&#39;?&#39;</span> <span class="k">for</span> <span class="n">help</span><span class="o">.</span>
+
+<span class="n">In</span> <span class="p">[</span><span class="mi">1</span><span class="p">]:</span> <span class="kn">import</span> <span class="nn">foo</span>
+<span class="o">---------------------------------------------------------------------------</span>
+<span class="ne">ImportError</span>                               <span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">)</span>
+<span class="o">&lt;</span><span class="n">ipython</span><span class="o">-</span><span class="nb">input</span><span class="o">-</span><span class="mi">1</span><span class="o">-</span><span class="mi">7</span><span class="n">f58dd7fb72e</span><span class="o">&gt;</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span><span class="p">()</span>
+<span class="o">----&gt;</span> <span class="mi">1</span> <span class="kn">import</span> <span class="nn">foo</span>
+
+<span class="ne">ImportError</span><span class="p">:</span> <span class="n">dynamic</span> <span class="n">module</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">define</span> <span class="n">module</span> <span class="n">export</span> <span class="n">function</span> <span class="p">(</span><span class="n">PyInit_foo</span><span class="p">)</span>
+
+<span class="n">In</span> <span class="p">[</span><span class="mi">2</span><span class="p">]:</span> <span class="nb">exit</span>
+</pre></div>
+
+
+<h3>Using SWIG</h3>
+<h4>The interface file</h4>
+<p>SWIG, while arguably more powerful than Cython (in the sense of supporting other languages, of course), is much more complicated.  The following is a SWIG interface file that does almost the same thing as the Cython one:</p>
+<div class="highlight"><pre><span></span><span class="cm">/*</span>
+<span class="cm"> * swig/graph.i</span>
+<span class="cm"> */</span>
+
+<span class="cm">/*</span>
+<span class="cm"> * First specify the module name - SWIG will write the Python file that has</span>
+<span class="cm"> * the same name (pgraph.py in this case).</span>
+<span class="cm"> */</span>
+<span class="nf">%module</span> <span class="n">pgraph</span>
+
+<span class="cm">/* The content between %{...%} is added to the generated C code */</span>
+<span class="o">%</span><span class="p">{</span>
+<span class="cp">#include</span> <span class="cpf">&quot;graph.h&quot;</span><span class="cp"></span>
+<span class="o">%</span><span class="p">}</span>
+
+<span class="cm">/*</span>
+<span class="cm"> * The first major part is to declare which C identifiers (variables,</span>
+<span class="cm"> * structures, functions, etc.) we wish to expose.</span>
+<span class="cm"> *</span>
+<span class="cm"> * SWIG by default exposes every possible C identifier.  We can tune the</span>
+<span class="cm"> * access controls *before* introducing the C prototypes.  The access controls</span>
+<span class="cm"> * include whether an identifier is visible, how the identifier name is mapped</span>
+<span class="cm"> * to another name in the target language, etc.</span>
+<span class="cm"> */</span>
+
+<span class="cm">/*</span>
+<span class="cm"> * First, we would like to rename the C structure &quot;graph&quot; into Python class</span>
+<span class="cm"> * &quot;Graph&quot;, to avoid naming conflicts in generated Python code.  More details</span>
+<span class="cm"> * will be explained in the &quot;%extend&quot; section below.</span>
+<span class="cm"> */</span>
+<span class="nf">%rename</span><span class="p">(</span><span class="s">&quot;Graph&quot;</span><span class="p">)</span> <span class="s">&quot;graph&quot;</span><span class="p">;</span>
+<span class="cm">/*</span>
+<span class="cm"> * The next thing is to hide all the C identifiers containing &quot;graph_&quot;, since</span>
+<span class="cm"> * they are internal functions for use in the C library.</span>
+<span class="cm"> */</span>
+<span class="nf">%ignore</span> <span class="s">&quot;graph_&quot;</span><span class="p">;</span>
+<span class="cm">/*</span>
+<span class="cm"> * We also wish to set the number of vertices and edges immutable in Python.</span>
+<span class="cm"> */</span>
+<span class="nf">%immutable</span> <span class="n">graph</span><span class="o">::</span><span class="n">n_vertices</span><span class="p">;</span>
+<span class="nf">%immutable</span> <span class="n">graph</span><span class="o">::</span><span class="n">n_edges</span><span class="p">;</span>
+<span class="cm">/*</span>
+<span class="cm"> * And also, tell SWIG to use our constructor and destructor instead of its</span>
+<span class="cm"> * own.  By default SWIG will call calloc(3) to allocate a dynamic object</span>
+<span class="cm"> * during construction, and free(3) to deallocate it.</span>
+<span class="cm"> */</span>
+<span class="nf">%nodefaultctor</span><span class="p">;</span>
+<span class="nf">%nodefaultdtor</span><span class="p">;</span>
+
+<span class="cm">/*</span>
+<span class="cm"> * Recall that we have a bunch of typedef&#39;s in &quot;graph.h&quot;.  SWIG does not</span>
+<span class="cm"> * follow the #include statements inside the headers as GCC does, so we</span>
+<span class="cm"> * need to include the typedef statements for types in stdint.h by</span>
+<span class="cm"> * ourselves.  This is done by including the builtin SWIG header &quot;stdint.i&quot;.</span>
+<span class="cm"> *</span>
+<span class="cm"> * NOTE: SWIG documentation mentions that you can force SWIG to follow</span>
+<span class="cm"> * #include statements, while making it search in the system include</span>
+<span class="cm"> * directory, i.e. adding the following flags:</span>
+<span class="cm"> * &quot;-I/usr/include -includeall&quot;</span>
+<span class="cm"> * You SHOULD NOT do this, since SWIG often get confused when reading system</span>
+<span class="cm"> * headers directly.</span>
+<span class="cm"> */</span>
+<span class="nf">%include</span> <span class="s">&quot;stdint.i&quot;</span>
+<span class="cm">/* Finally, steal the declaration of &quot;struct graph&quot; and its functions */</span>
+<span class="nf">%include</span> <span class="s">&quot;graph.h&quot;</span>
+
+<span class="cm">/*</span>
+<span class="cm"> * Now we need to decide how we are going to actually expose &quot;struct graph&quot;.</span>
+<span class="cm"> * Here, we are extending the C structure &quot;struct graph&quot; into a class-like</span>
+<span class="cm"> * semantic.</span>
+<span class="cm"> *</span>
+<span class="cm"> * Yes, this is very similar to C++.  In fact, using C++ on SWIG will make our</span>
+<span class="cm"> * lives much easier.  However,</span>
+<span class="cm"> * (1) If one can make SWIG work on C, then one can literally do anything.</span>
+<span class="cm"> * (2) C++ has a lot of features and is evolving constantly, while SWIG only</span>
+<span class="cm"> *     supports most of C++11 (but pretty maturely).</span>
+<span class="cm"> */</span>
+<span class="nf">%extend</span> <span class="n">graph</span> <span class="p">{</span>
+    <span class="cm">/* A constructor for C structure looks like this. */</span>
+    <span class="n">graph</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">struct</span> <span class="n">graph</span> <span class="o">*</span><span class="n">g</span> <span class="o">=</span> <span class="n">graph_create</span><span class="p">();</span>
+        <span class="cm">/*</span>
+<span class="cm">         * NOTE: we don&#39;t have a check for NULL pointers here.  This</span>
+<span class="cm">         * is dangerous, but we are not considering that for the</span>
+<span class="cm">         * purpose of demonstration.  More on this in later articles.</span>
+<span class="cm">         *</span>
+<span class="cm">         * Coincidentally, this is a reason why using C++ for SWIG</span>
+<span class="cm">         * is (likely) easier.</span>
+<span class="cm">         */</span>
+        <span class="k">return</span> <span class="n">g</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="cm">/* A destructor looks like this. */</span>
+    <span class="o">~</span><span class="n">graph</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="cm">/*</span>
+<span class="cm">         * $self refers to the pointer to the current object itself</span>
+<span class="cm">         * (like &quot;this&quot; in C++ or &quot;self&quot; in Python).</span>
+<span class="cm">         */</span>
+        <span class="n">graph_destroy</span><span class="p">(</span><span class="n">$self</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="cm">/*</span>
+<span class="cm">     * If we don&#39;t specify a body for a class method, SWIG will look for</span>
+<span class="cm">     * the C function &lt;class-name&gt;_&lt;method-name&gt;, inserting $self as the</span>
+<span class="cm">     * first argument.</span>
+<span class="cm">     *</span>
+<span class="cm">     * For example, the following is equivalent to</span>
+<span class="cm">     * pgraph_ssize_t add_vertices(pgraph_size_t n)</span>
+<span class="cm">     * {</span>
+<span class="cm">     *  return graph_add_vertices($self, n);</span>
+<span class="cm">     * }</span>
+<span class="cm">     */</span>
+    <span class="n">pgraph_ssize_t</span> <span class="n">add_vertices</span><span class="p">(</span><span class="n">pgraph_size_t</span> <span class="n">n</span><span class="p">);</span>
+    <span class="n">pgraph_ssize_t</span> <span class="nf">add_edges</span><span class="p">(</span><span class="n">pgraph_size_t</span> <span class="n">n</span><span class="p">);</span>
+<span class="p">};</span>
+</pre></div>
+
+
+<h4>Building the package</h4>
+<p>The building process is almost the same as Cython, except that the output of SWIG is different:</p>
+<ol>
+<li>Translate the SWIG interface to two files: a C source file for low-level interaction between C library and Python C API, and a Python module for high-level stuff on the library built:
+    <code>$ swig -python -I./include swig/graph.i</code></li>
+<li>Compile our C code as well as the <code>graph_wrap.c</code> generated by SWIG:
+    <code>$ gcc -fpic -c -I./include -o src/graph.o src/graph.c
+    $ gcc -fpic -c -o swig/graph_wrap.o -I./include `pkg-config --cflags python3` swig/graph_wrap.c</code></li>
+<li>Linking
+    <code>gcc -shared -fpic -o _pgraph.so src/graph.o swig/graph_wrap.o `pkg-config --libs python3`</code></li>
+<li>Moving the generated python file <code>swig/pgraph.py</code> to the same directory as the linked shared library <code>_pgraph.so</code>.
+    <code>mv swig/pgraph.py .</code></li>
+</ol>
+<h4>Test!</h4>
+<div class="highlight"><pre><span></span><span class="n">ipython3</span>
+<span class="n">Python</span> <span class="mf">3.6</span><span class="o">.</span><span class="mi">6</span> <span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="n">Jul</span> <span class="mi">19</span> <span class="mi">2018</span><span class="p">,</span> <span class="mi">14</span><span class="p">:</span><span class="mi">25</span><span class="p">:</span><span class="mi">17</span><span class="p">)</span> 
+<span class="n">Type</span> <span class="s1">&#39;copyright&#39;</span><span class="p">,</span> <span class="s1">&#39;credits&#39;</span> <span class="ow">or</span> <span class="s1">&#39;license&#39;</span> <span class="k">for</span> <span class="n">more</span> <span class="n">information</span>
+<span class="n">IPython</span> <span class="mf">6.5</span><span class="o">.</span><span class="mi">0</span> <span class="o">--</span> <span class="n">An</span> <span class="n">enhanced</span> <span class="n">Interactive</span> <span class="n">Python</span><span class="o">.</span> <span class="n">Type</span> <span class="s1">&#39;?&#39;</span> <span class="k">for</span> <span class="n">help</span><span class="o">.</span>
+
+<span class="n">In</span> <span class="p">[</span><span class="mi">1</span><span class="p">]:</span> <span class="kn">import</span> <span class="nn">pgraph</span>
+
+<span class="n">In</span> <span class="p">[</span><span class="mi">2</span><span class="p">]:</span> <span class="n">g</span> <span class="o">=</span> <span class="n">pgraph</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+
+<span class="n">In</span> <span class="p">[</span><span class="mi">3</span><span class="p">]:</span> <span class="n">g</span><span class="o">.</span><span class="n">n_vertices</span>
+<span class="n">Out</span><span class="p">[</span><span class="mi">3</span><span class="p">]:</span> <span class="mi">0</span>
+
+<span class="n">In</span> <span class="p">[</span><span class="mi">4</span><span class="p">]:</span> <span class="n">g</span><span class="o">.</span><span class="n">add_vertices</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">Out</span><span class="p">[</span><span class="mi">4</span><span class="p">]:</span> <span class="mi">8</span>
+
+<span class="n">In</span> <span class="p">[</span><span class="mi">5</span><span class="p">]:</span> <span class="n">g</span><span class="o">.</span><span class="n">n_vertices</span>
+<span class="n">Out</span><span class="p">[</span><span class="mi">5</span><span class="p">]:</span> <span class="mi">8</span>
+
+<span class="n">In</span> <span class="p">[</span><span class="mi">6</span><span class="p">]:</span> <span class="n">g</span><span class="o">.</span><span class="n">add_vertices</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
+<span class="o">---------------------------------------------------------------------------</span>
+<span class="ne">TypeError</span>                                 <span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">)</span>
+<span class="o">&lt;</span><span class="n">ipython</span><span class="o">-</span><span class="nb">input</span><span class="o">-</span><span class="mi">6</span><span class="o">-</span><span class="n">d716880dabd7</span><span class="o">&gt;</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span><span class="p">()</span>
+<span class="o">----&gt;</span> <span class="mi">1</span> <span class="n">g</span><span class="o">.</span><span class="n">add_vertices</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
+
+<span class="o">~/</span><span class="n">ML</span><span class="o">/</span><span class="n">python</span><span class="o">-</span><span class="n">pgraph</span><span class="o">/</span><span class="n">pgraph</span><span class="o">.</span><span class="n">py</span> <span class="ow">in</span> <span class="n">add_vertices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+    <span class="mi">119</span> 
+    <span class="mi">120</span>     <span class="k">def</span> <span class="nf">add_vertices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="o">--&gt;</span> <span class="mi">121</span>         <span class="k">return</span> <span class="n">_pgraph</span><span class="o">.</span><span class="n">Graph_add_vertices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+    <span class="mi">122</span> 
+    <span class="mi">123</span>     <span class="k">def</span> <span class="nf">add_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+
+<span class="ne">TypeError</span><span class="p">:</span> <span class="ow">in</span> <span class="n">method</span> <span class="s1">&#39;Graph_add_vertices&#39;</span><span class="p">,</span> <span class="n">argument</span> <span class="mi">2</span> <span class="n">of</span> <span class="nb">type</span> <span class="s1">&#39;pgraph_size_t&#39;</span>
+
+<span class="n">In</span> <span class="p">[</span><span class="mi">7</span><span class="p">]:</span> <span class="nb">exit</span>
+</pre></div>
+
+
+<h3>Conclusion</h3>
+<p>We have gone through a miniature example of writing a C library as a Python extension, using both Cython and SWIG.  In the upcoming articles, I will be</p>
+<ul>
+<li>Extending the C library itself with actual functionalities on graphs.</li>
+<li>Updating Cython and/or SWIG interface files accordingly.</li>
+<li>Setting up a build environment using <code>setuptools</code> and/or CMake.</li>
+<li>Maybe go through either C++ or <code>ctypes</code>.</li>
+</ul>
+<p>Have fun.</p>
+<p><img alt="import antigravity" src="https://www.explainxkcd.com/wiki/images/f/fd/python.png"></p>
+  </div>
+  <div class="tag-cloud">
+    <p>
+      <a href="https://barclayii.github.io/tag/python.html">python</a>
+      <a href="https://barclayii.github.io/tag/cc.html">c/c++</a>
+      <a href="https://barclayii.github.io/tag/cython.html">cython</a>
+      <a href="https://barclayii.github.io/tag/swig.html">swig</a>
+    </p>
+  </div>
+
+
+
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'barclayiiblog';
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>
+        Please enable JavaScript to view comments.
+
+</noscript>
+</article>
+
+    <footer>
+<p>&copy; Quan Gan (Andy) </p>
+<p>    Powered by <a href="http://getpelican.com" target="_blank">Pelican</a> - <a href="https://github.com/alexandrevicenzi/flex" target="_blank">Flex</a> theme by <a href="http://alexandrevicenzi.com" target="_blank">Alexandre Vicenzi</a>
+</p>    </footer>
+  </main>
+
+
+
+
+
+<script type="application/ld+json">
+{
+  "@context" : "http://schema.org",
+  "@type" : "Blog",
+  "name": " Quan Gan (Andy) @ NYU ",
+  "url" : "https://barclayii.github.io",
+  "image": "",
+  "description": "Random notes on Machine Learning (Deep Learning in particular)"
+}
+</script>
+</body>
+</html>

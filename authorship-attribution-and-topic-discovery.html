@@ -1,0 +1,562 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link href='//fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,400italic' rel='stylesheet' type='text/css'>
+
+    <link rel="stylesheet" type="text/css" href="https://barclayii.github.io/theme/stylesheet/style.min.css">
+
+  <link rel="stylesheet" type="text/css" href="https://barclayii.github.io/theme/pygments/github.min.css">
+  <link rel="stylesheet" type="text/css" href="https://barclayii.github.io/theme/font-awesome/css/font-awesome.min.css">
+
+
+
+
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="HandheldFriendly" content="True" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="index, follow" />
+
+
+<meta name="author" content="Quan Gan (Andy)" />
+<meta name="description" content="As a project for Inference and Representation course in NYU, me and this guy decided to do some modeling of academic author interests. Such model would have several practical applications: Recommending latest papers to researchers, like what Mendeley and Microsoft Academic (MSA) does. Recommending the researchers to each other on …" />
+<meta name="keywords" content="nlp, word-embedding, shallow">
+<meta property="og:site_name" content="Quan Gan (Andy) @ NYU"/>
+<meta property="og:title" content="Authorship Attribution and Topic Discovery"/>
+<meta property="og:description" content="As a project for Inference and Representation course in NYU, me and this guy decided to do some modeling of academic author interests. Such model would have several practical applications: Recommending latest papers to researchers, like what Mendeley and Microsoft Academic (MSA) does. Recommending the researchers to each other on …"/>
+<meta property="og:locale" content="en_US"/>
+<meta property="og:url" content="https://barclayii.github.io/authorship-attribution-and-topic-discovery.html"/>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2017-12-02 14:18:21.128822-05:00"/>
+<meta property="article:modified_time" content=""/>
+<meta property="article:author" content="https://barclayii.github.io/author/quan-gan-andy.html">
+<meta property="article:section" content="nlp"/>
+<meta property="article:tag" content="nlp"/>
+<meta property="article:tag" content="word-embedding"/>
+<meta property="article:tag" content="shallow"/>
+<meta property="og:image" content="">
+
+  <title>Quan Gan (Andy) @ NYU &ndash; Authorship Attribution and Topic Discovery</title>
+
+</head>
+<body>
+  <aside>
+    <div>
+      <a href="https://barclayii.github.io">
+        <img src="https://barclayii.github.io/theme/img/profile.png" alt="Quan Gan (Andy)" title="Quan Gan (Andy)">
+      </a>
+      <h1><a href="https://barclayii.github.io">Quan Gan (Andy)</a></h1>
+
+<p>Data Science MS Student, NYU</p>
+
+      <ul class="social">
+        <li><a class="sc-github" href="https://github.com/BarclayII" target="_blank"><i class="fa fa-github"></i></a></li>
+        <li><a class="sc-linkedin" href="https://www.linkedin.com/in/quan-gan-231992136/" target="_blank"><i class="fa fa-linkedin"></i></a></li>
+      </ul>
+    </div>
+
+
+  </aside>
+  <main>
+
+    <nav>
+      <a href="https://barclayii.github.io">    Home
+</a>
+
+      <a href="/archives.html">Archives</a>
+      <a href="/categories.html">Categories</a>
+      <a href="/tags.html">Tags</a>
+
+
+    </nav>
+
+<article class="single">
+  <header>
+    <h1 id="authorship-attribution-and-topic-discovery">Authorship Attribution and Topic Discovery</h1>
+    <p>
+          Posted on Sat 02 December 2017 in <a href="https://barclayii.github.io/category/nlp.html">nlp</a>
+
+
+    </p>
+  </header>
+
+
+  <div>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-MML-AM_CHTML'></script>
+
+<p>As a project for <a href="https://github.com/joanbruna/ir17">Inference and Representation</a> course in NYU, me and <a href="https://github.com/BruceChaun">this guy</a> decided to do some modeling of academic author interests.  Such model would have several practical applications:</p>
+<ul>
+<li>Recommending latest papers to researchers, like what <a href="https://www.mendeley.com">Mendeley</a> and <a href="https://academic.microsoft.com">Microsoft Academic (MSA)</a> does.</li>
+<li>Recommending the researchers to each other on some social network.  Both Mendeley and MSA have this.  I wonder why not a lot of people is using it as a social platform...</li>
+<li>Automatically assigning papers to reviewers.  Actually we already have <a href="http://torontopapermatching.org/webapp/profileBrowser/about_us/">Toronto Paper Matching System (TPMS)</a> adopted in multiple conference review systems.</li>
+</ul>
+<p>Nonetheless, I have to admit that the main motivation (at least for me) of doing this project is to enable some ways to visualize the authors as groups, and inspect them with my own eyes.  After all, it should be a lot of fun to see which researchers are close to each other on a figure.</p>
+<p><strong>The code is available <a href="https://github.com/BruceChaun/ArxivInference">here</a>.</strong></p>
+<h4>Dataset</h4>
+<p>Preferably, we would like a dataset that has strong indicator of "interest".  A good example would be the user database of Mendeley or MSA, where actual users have an archive of papers; such papers obviously are of the user's interest.  Another good dataset would be those from TPMS.</p>
+<p>Unfortunately, it is unlikely for MSA and Mendeley to share their database to the public (of course).  Also the dataset used by TPMS is not available.  Therefore, we have to use <em>authorship</em> as a proxy of author interest.  After all, a person should be sufficiently interested on some topic so that he/she can actually write something about it.</p>
+<p>It is much easier to grab authorship data, since there are already a number of online libraries, such as <a href="https://www.arxiv.org">arXiv</a> and MSA.  Both libraries have bulk data access Web API where one can easily scrape metadata of all the papers, including the authors, abstracts, titles, etc.</p>
+<ul>
+<li>We have a <a href="https://www.kaggle.com/benhamner/nips-papers">NIPS papers dataset</a>, where <a href="https://mimno.infosci.cornell.edu/info6150/readings/398.pdf">Author Topic Model</a> and <a href="https://www.cl.cam.ac.uk/~np394/docs/hdm_2014_paper.pdf">the supervised version</a> were both evaluated.</li>
+<li>Thanks to Andrej Karpathy's <a href="https://www.arxiv-sanity.com">arxiv-sanity</a>, we can conveniently grab thousands of machine learning research papers.  We crawled 49,980 papers using arXiv-sanity, covering the research from 1997 to 2017 (a 20-year span).</li>
+</ul>
+<p>For all datasets, we lowercase all the words, and removed the stop words.</p>
+<h4>Model</h4>
+<p>The model we were using is very simple:</p>
+<ol>
+<li>We represent each word and each author as 20-dimension embeddings, and compute a score of authorship by dot product between the author embedding and the average word embedding of a document.</li>
+<li>We minimize a pairwise ranking loss with negative sampling on both authors and documents.</li>
+</ol>
+<p>More formally, we have a dataset of <span><span class="MathJax_Preview">$D$</span><script type="math/tex">D</script></span> papers, where each document has a list of words <span><span class="MathJax_Preview">$\mathcal{D}_i = (w_{i_1}, ..., w_{i_{n_i}})$</span><script type="math/tex">\mathcal{D}_i = (w_{i_1}, ..., w_{i_{n_i}})</script></span> and a list of authors <span><span class="MathJax_Preview">$\mathcal{A}_i = (a_{i_1}, ..., a_{i_{m_i}})$</span><script type="math/tex">\mathcal{A}_i = (a_{i_1}, ..., a_{i_{m_i}})</script></span>.  The total number of authors in the dataset is <span><span class="MathJax_Preview">$A$</span><script type="math/tex">A</script></span>.</p>
+<p>We first convert all <span><span class="MathJax_Preview">$w_{i,j}$</span><script type="math/tex">w_{i,j}</script></span> and <span><span class="MathJax_Preview">$a_{i,k}$</span><script type="math/tex">a_{i,k}</script></span> to some embedding vectors <span><span class="MathJax_Preview">$\mathbf{w}_{i,j}$</span><script type="math/tex">\mathbf{w}_{i,j}</script></span> and <span><span class="MathJax_Preview">$\mathbf{a}_{i,k}$</span><script type="math/tex">\mathbf{a}_{i,k}</script></span>, using embedding matrices <span><span class="MathJax_Preview">$\mathbf{W}$</span><script type="math/tex">\mathbf{W}</script></span> and <span><span class="MathJax_Preview">$\mathbf{A}$</span><script type="math/tex">\mathbf{A}</script></span> for words and authors respectively.  Then we compute the bag-of-words embedding and a bag-of-authors embedding:</p>
+<p>
+<div><span class="MathJax_Preview">$$
+\bar{\mathbf{w}}_i = \dfrac{1}{n_i}\sum_{j=1}^{n_i}\mathbf{w}_{i,j} \\
+\bar{\mathbf{a}}_i = \dfrac{1}{m_i}\sum_{k=1}^{m_i}\mathbf{a}_{i,k}
+$$</span><script type="math/tex; mode=display">
+\bar{\mathbf{w}}_i = \dfrac{1}{n_i}\sum_{j=1}^{n_i}\mathbf{w}_{i,j} \\
+\bar{\mathbf{a}}_i = \dfrac{1}{m_i}\sum_{k=1}^{m_i}\mathbf{a}_{i,k}
+</script>
+</div>
+</p>
+<p>The score is simply <span><span class="MathJax_Preview">$s_i = \bar{\mathbf{w}}_i^T\bar{\mathbf{a}}_i$</span><script type="math/tex">s_i = \bar{\mathbf{w}}_i^T\bar{\mathbf{a}}_i</script></span>.</p>
+<p>We chose ranking loss only because we don't feel like assigning a concrete number as a target for optimization.  Rather, we think it makes more sense to just tell the model to "prefer" some authors/documents than others.  In order to use ranking loss, we need some negative samples:</p>
+<ul>
+<li>For document, we simply sample one uniformly in the corpus and we can similarly have a bag-of-word <span><span class="MathJax_Preview">$\bar{\mathbf{w}}_i'$</span><script type="math/tex">\bar{\mathbf{w}}_i'</script></span>.</li>
+<li>For authors, we treat the set of all authors, excluding <span><span class="MathJax_Preview">$\mathcal{A}_i$</span><script type="math/tex">\mathcal{A}_i</script></span>, as the negative sample of authors.  The formulation is simply
+  <div><span class="MathJax_Preview">$$
+  \bar{\mathbf{a}}_i'=\dfrac{1}{A-m_i}\left(\sum_{k=1}^A\mathbf{a}_{i,k} - m_i \bar{\mathbf{a}}_i\right)
+  $$</span><script type="math/tex; mode=display">
+  \bar{\mathbf{a}}_i'=\dfrac{1}{A-m_i}\left(\sum_{k=1}^A\mathbf{a}_{i,k} - m_i \bar{\mathbf{a}}_i\right)
+  </script>
+</div>
+</li>
+</ul>
+<p>The loss function we are going to minimize is then simply two pairwise ranking losses, one for negative author samples and another for negative document samples, plus regularization terms:</p>
+<p>
+<div><span class="MathJax_Preview">$$
+\mathcal{L}_i = \max(0, 1 + \bar{\mathbf{w}}_i'^T \bar{\mathbf{a}}_i -
+\bar{\mathbf{w}}_i^T \bar{\mathbf{a}}_i) +
+\max(0, 1 + \bar{\mathbf{w}}_i^T \bar{\mathbf{a}}_i' -
+\bar{\mathbf{w}}_i^T \bar{\mathbf{a}}_i) \\
+\mathcal{L} = \dfrac{1}{D} \sum_{i=1}^D \mathcal{L}_i + \lambda_A \lVert \mathbf{A} \rVert_2^2 + \lambda_W \lVert \mathbf{W} \rVert_2^2
+$$</span><script type="math/tex; mode=display">
+\mathcal{L}_i = \max(0, 1 + \bar{\mathbf{w}}_i'^T \bar{\mathbf{a}}_i -
+\bar{\mathbf{w}}_i^T \bar{\mathbf{a}}_i) +
+\max(0, 1 + \bar{\mathbf{w}}_i^T \bar{\mathbf{a}}_i' -
+\bar{\mathbf{w}}_i^T \bar{\mathbf{a}}_i) \\
+\mathcal{L} = \dfrac{1}{D} \sum_{i=1}^D \mathcal{L}_i + \lambda_A \lVert \mathbf{A} \rVert_2^2 + \lambda_W \lVert \mathbf{W} \rVert_2^2
+</script>
+</div>
+</p>
+<p>where <span><span class="MathJax_Preview">$\lambda_A = \lambda_W = 1\times 10^{-5}$</span><script type="math/tex">\lambda_A = \lambda_W = 1\times 10^{-5}</script></span>.</p>
+<p>We implemented the model in PyTorch.  It's trainable on CPU, albeit very slowly.  We believe that if we tailor the implementation in C or Fortran it will become a lot faster.  Also, note that if we fix <span><span class="MathJax_Preview">$\mathbf{W}$</span><script type="math/tex">\mathbf{W}</script></span>, the loss function would be convex w.r.t. <span><span class="MathJax_Preview">$\mathbf{A}$</span><script type="math/tex">\mathbf{A}</script></span>, and vice versa.  Not sure if doing alternating (stochastic) convex optimization would speed up.</p>
+<h4>Quantitative Results</h4>
+<ol>
+<li>
+<p>We evaluated our model on the NIPS 1987-2013 dataset, same as what the Supervised Author-Topic Model did.  We got our own set of papers from <a href="https://www.kaggle.com/benhamner/nips-papers">here</a>.  The resulting dataset is different from the original paper though: we have 2372 papers, 2577 authors and a vocabulary of 181948 words; the author set and the vocabulary is larger than theirs.  Not sure if it helps the performance, but our model seems to be significantly better in terms of AUC on multiple authors:</p>
+<table>
+<thead>
+<tr>
+<th align="center">Model</th>
+<th align="center">AUC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">Supervised Author-Topic Model</td>
+<td align="center">0.67</td>
+</tr>
+<tr>
+<td align="center">Author-Topic Model</td>
+<td align="center">0.62</td>
+</tr>
+<tr>
+<td align="center">RF: Single-tree</td>
+<td align="center">0.55</td>
+</tr>
+<tr>
+<td align="center">RF: 5-trees</td>
+<td align="center">0.71</td>
+</tr>
+<tr>
+<td align="center">Ours</td>
+<td align="center">0.85</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
+<p>We also evaluated the average precision over 1, 5, 10, 50.  The result is pretty lame though:</p>
+<table>
+<thead>
+<tr>
+<th align="center">K</th>
+<th align="center">AP@K</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">1</td>
+<td align="center">0.088</td>
+</tr>
+<tr>
+<td align="center">5</td>
+<td align="center">0.092</td>
+</tr>
+<tr>
+<td align="center">10</td>
+<td align="center">0.099</td>
+</tr>
+<tr>
+<td align="center">50</td>
+<td align="center">0.109</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
+<p>For each document-author pair in the dataset, we also computed the ranking of that author among everybody, and took the median.  The result is 101 out of 2577 --- OK'ish, but not great.</p>
+</li>
+</ol>
+<h4>Discovering Topics</h4>
+<p>We can do a lot of things as qualitative analysis:
+<em> Given an author, propose a list of words associated to the topic of his/her interest.  We can do that by ranking all the words <span><span class="MathJax_Preview">$w_j$</span><script type="math/tex">w_j</script></span> with the scores <span><span class="MathJax_Preview">$\mathbf{w}_j^T \mathbf{a}_i$</span><script type="math/tex">\mathbf{w}_j^T \mathbf{a}_i</script></span>.
+</em> Given an author, find his/her nearest neighbors (or visualize the embeddings using t-SNE).</p>
+<p>We evaluate qualitatively using the arXiv dataset.  We first divided the dataset into training, validation, and test by 8:1:1.  Then, we only keep the authors which appeared at least 3 times in the training set as the author set.  We finally discard every paper in all three partitions where none of the authors is in the author set, and only kept the paper abstracts as documents.  Consequently, we have:</p>
+<ul>
+<li>a vocabulary of 91719 words</li>
+<li>a set of 11492 authors</li>
+<li>a training set of 31923 papers</li>
+<li>a validation set of 3577 papers</li>
+<li>a test set of 3521 papers</li>
+</ul>
+<p>Here is the top-ranked words given an author.  Here I picked some authors that I have heard of, and grouped them into several categories.  Yes, it means that I'm the <del>noisy</del> classifier of author interests.</p>
+<p><strong>I'm also considering releasing a web-app demo but I don't know if I have time to do it.</strong></p>
+<p>The meaning of <span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span> is explained in the following section.</p>
+<table>
+<thead>
+<tr>
+<th align="center">Name</th>
+<th align="center">Top-5 words</th>
+<th align="center">Top-5 words with <span><span class="MathJax_Preview">$\lambda_c=0.1$</span><script type="math/tex">\lambda_c=0.1</script></span></th>
+<th align="center">Top-5 words with <span><span class="MathJax_Preview">$\lambda_c=1$</span><script type="math/tex">\lambda_c=1</script></span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">Li Fei-Fei</td>
+<td align="center"><code>visual images image video object</code></td>
+<td align="center"><code>visual video object image images</code></td>
+<td align="center"><code>visual video object deep saliency</code></td>
+</tr>
+<tr>
+<td align="center">Kaiming He</td>
+<td align="center"><code>image images networks neural deep</code></td>
+<td align="center"><code>deep image convolutional images visual</code></td>
+<td align="center"><code>video image visual 3d saliency</code></td>
+</tr>
+<tr>
+<td align="center">Seunghoon Hong</td>
+<td align="center"><code>images proposed visual video object</code></td>
+<td align="center"><code>image images video segmentation visual</code></td>
+<td align="center"><code>video saliency 3d segmentation image</code></td>
+</tr>
+<tr>
+<td align="center">Rob Fergus</td>
+<td align="center"><code>model models image images visual</code></td>
+<td align="center"><code>deep visual training neural object</code></td>
+<td align="center"><code>adversarial deep visual dropout video</code></td>
+</tr>
+<tr>
+<td align="center">Kyunghyun Cho</td>
+<td align="center"><code>neural model language network word</code></td>
+<td align="center"><code>neural speech training deep word</code></td>
+<td align="center"><code>speech word rnn lstm sentiment</code></td>
+</tr>
+<tr>
+<td align="center">Chris Dyer</td>
+<td align="center"><code>models language show word training</code></td>
+<td align="center"><code>language word text words translation</code></td>
+<td align="center"><code>word entity embedding translation sentiment</code></td>
+</tr>
+<tr>
+<td align="center">Tomas Mikolov</td>
+<td align="center"><code>learning language word machine task</code></td>
+<td align="center"><code>language word text translation words</code></td>
+<td align="center"><code>word dialogue sentiment translation language</code></td>
+</tr>
+<tr>
+<td align="center">Samuel R. Bowman</td>
+<td align="center"><code>model models neural language networks</code></td>
+<td align="center"><code>language word translation models text</code></td>
+<td align="center"><code>word translation dialogue speech language</code></td>
+</tr>
+<tr>
+<td align="center">Sergey Levine</td>
+<td align="center"><code>learning approach training policy using</code></td>
+<td align="center"><code>policy learning reinforcement robot agents</code></td>
+<td align="center"><code>robot policy rl reinforcement reward</code></td>
+</tr>
+<tr>
+<td align="center">David Silver</td>
+<td align="center"><code>learning algorithm policy algorithms problem</code></td>
+<td align="center"><code>policy agents reinforcement learning game</code></td>
+<td align="center"><code>policy agents rl reinforcement planning</code></td>
+</tr>
+<tr>
+<td align="center">Volodymyr Mnih</td>
+<td align="center"><code>learning neural networks network deep</code></td>
+<td align="center"><code>neural deep networks reinforcement agents</code></td>
+<td align="center"><code>rl policy reinforcement robot agent</code></td>
+</tr>
+<tr>
+<td align="center">Pieter Abbeel</td>
+<td align="center"><code>learning approach show policy training</code></td>
+<td align="center"><code>learning policy reinforcement agents robot</code></td>
+<td align="center"><code>policy rl robot reinforcement reward</code></td>
+</tr>
+<tr>
+<td align="center">David M. Blei</td>
+<td align="center"><code>models model inference data bayesian</code></td>
+<td align="center"><code>inference bayesian models model latent</code></td>
+<td align="center"><code>causal bayesian inference latent variational</code></td>
+</tr>
+<tr>
+<td align="center">Daphne Koller</td>
+<td align="center"><code>models inference bayesian model approach</code></td>
+<td align="center"><code>bayesian inference probabilistic uncertainty causal</code></td>
+<td align="center"><code>causal policy bayesian agents quantum</code></td>
+</tr>
+<tr>
+<td align="center">David Sontag</td>
+<td align="center"><code>models data model inference algorithm</code></td>
+<td align="center"><code>inference models bayesian latent model</code></td>
+<td align="center"><code>latent ml variational inference predictive</code></td>
+</tr>
+<tr>
+<td align="center">Mehryar Mohri</td>
+<td align="center"><code>algorithm problem algorithms learning show</code></td>
+<td align="center"><code>bounds algorithms algorithm optimization bound</code></td>
+<td align="center"><code>regret bounds fairness causal bound</code></td>
+</tr>
+<tr>
+<td align="center">Joan Bruna</td>
+<td align="center"><code>networks network neural model deep</code></td>
+<td align="center"><code>networks network deep generative neural</code></td>
+<td align="center"><code>dropout kernel adversarial gans generative</code></td>
+</tr>
+<tr>
+<td align="center">Ian Goodfellow</td>
+<td align="center"><code>learning neural training models deep</code></td>
+<td align="center"><code>learning neural deep adversarial training</code></td>
+<td align="center"><code>adversarial dropout gans generative gan</code></td>
+</tr>
+<tr>
+<td align="center">Nicolas Papernot</td>
+<td align="center"><code>learning training data neural machine</code></td>
+<td align="center"><code>learning adversarial deep training machine</code></td>
+<td align="center"><code>adversarial dropout neurons gans genertive</code></td>
+</tr>
+<tr>
+<td align="center">Yann LeCun</td>
+<td align="center"><code>training networks deep learning show</code></td>
+<td align="center"><code>deep training networks neural adversarial</code></td>
+<td align="center"><code>adversarial dropout deep gans gan</code></td>
+</tr>
+<tr>
+<td align="center">Yoshua Bengio</td>
+<td align="center"><code>learning neural training networks models</code></td>
+<td align="center"><code>neural networks deep training learning</code></td>
+<td align="center"><code>adversarial dropout generative gans neurons</code></td>
+</tr>
+<tr>
+<td align="center">Geoffrey E. Hinton</td>
+<td align="center"><code>data models learning model training</code></td>
+<td align="center"><code>models learning model neural training</code></td>
+<td align="center"><code>adversarial dropout generative gans rnn</code></td>
+</tr>
+</tbody>
+</table>
+<p>In the vanilla case (where there is no <span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span>), it seems that other than the computer vision folks, the model tend to assign more generic words that can be applied to <em>anybody</em> (such as <code>model</code>, <code>learning</code>, etc.) as top-ranked words.  This issue is more severe on the highest-ranked words: those words simply didn't tell us anything about the author's interest.</p>
+<h4>Inverse Document Frequency Regularizer?</h4>
+<p>Presumably, common words like <code>model</code>, <code>learning</code> should appear across a majority of the papers <em>regardless</em> of the actual topics.  Since we have L2 regularization on the word embeddings, words that appear more often would have a larger L2 norm than the rare ones.  And because we are computing the scores by dot products, the embeddings that have a bigger L2 norm will dominate the smaller ones.  For instance, in the model above, the embedding for <code>learning</code> has an L2 norm of 23.06, while the one for <code>policy</code> is only 5.68.</p>
+<p>Penalizing the norm of the more frequent words should help.  However, we probably don't want to regularize a word that occurs frequently in a <em>single</em> document but nowhere else; such word is very likely informative.  Therefore, we only want to penalize the word based on <em>the number of documents where the word showed up</em>.  We can regard this idea as an analogy to inverse document frequency (IDF).</p>
+<p>This regularization loss can be written as the following:
+<div><span class="MathJax_Preview">$$
+\mathcal{L}_c = \lambda_c \sum_{i=1}^V C_i \lVert \mathbf{w}_i \rVert_2^2
+$$</span><script type="math/tex; mode=display">
+\mathcal{L}_c = \lambda_c \sum_{i=1}^V C_i \lVert \mathbf{w}_i \rVert_2^2
+</script>
+</div>
+where <span><span class="MathJax_Preview">$C_i$</span><script type="math/tex">C_i</script></span> is the number of documents the word <span><span class="MathJax_Preview">$w_i$</span><script type="math/tex">w_i</script></span> showed up.  In stochastic gradient descent, <span><span class="MathJax_Preview">$C_i$</span><script type="math/tex">C_i</script></span> is simply counted from the documents in the minibatch.</p>
+<p>We evaluate the effect of this regularization both quantitatively and qualitatively.  For comparison, we counted the number of different words occurred in top-<span><span class="MathJax_Preview">$K$</span><script type="math/tex">K</script></span> ranking, and we compute the entropy of the normalized word occurrences.  Those having a more diverse list of proposed words should have a higher entropy.  We also give the median of author ranking and average precision to demonstrate how this regularization hurts our model:</p>
+<table>
+<thead>
+<tr>
+<th align="center"><span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span></th>
+<th align="center">0</th>
+<th align="center">0.1</th>
+<th align="center">1</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center"># of different words in top-1</td>
+<td align="center">76</td>
+<td align="center">101</td>
+<td align="center">84</td>
+</tr>
+<tr>
+<td align="center"># of different words in top-5</td>
+<td align="center">159</td>
+<td align="center">221</td>
+<td align="center">207</td>
+</tr>
+<tr>
+<td align="center"># of different words in top-10</td>
+<td align="center">234</td>
+<td align="center">332</td>
+<td align="center">314</td>
+</tr>
+<tr>
+<td align="center">Entropy of top-1 word distribution</td>
+<td align="center">2.95</td>
+<td align="center">3.34</td>
+<td align="center">3.45</td>
+</tr>
+<tr>
+<td align="center">Entropy of top-5 word distribution</td>
+<td align="center">4.04</td>
+<td align="center">4.38</td>
+<td align="center">4.34</td>
+</tr>
+<tr>
+<td align="center">Entropy of top-10 word distribution</td>
+<td align="center">4.55</td>
+<td align="center">4.88</td>
+<td align="center">4.81</td>
+</tr>
+<tr>
+<td align="center">AP@1</td>
+<td align="center">0.027</td>
+<td align="center">0.023</td>
+<td align="center">0.017</td>
+</tr>
+<tr>
+<td align="center">AP@5</td>
+<td align="center">0.020</td>
+<td align="center">0.018</td>
+<td align="center">0.012</td>
+</tr>
+<tr>
+<td align="center">AP@10</td>
+<td align="center">0.023</td>
+<td align="center">0.021</td>
+<td align="center">0.014</td>
+</tr>
+<tr>
+<td align="center">AP@50</td>
+<td align="center">0.028</td>
+<td align="center">0.026</td>
+<td align="center">0.017</td>
+</tr>
+<tr>
+<td align="center">Median of ranking</td>
+<td align="center">544</td>
+<td align="center">548</td>
+<td align="center">727</td>
+</tr>
+</tbody>
+</table>
+<p>When I designed this IDF regularizer, I assumed that increasing <span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span> would consistently increase the "specificity" of word proposals.  The experiment shows that buffing up <span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span> too much would instead kill off the diversity of proposals.  In retrospect, this makes sense because the frequent-but-informative words get killed as well.</p>
+<p>The top-ranked words for the authors with non-zero <span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span> is shown above.  We can see that when <span><span class="MathJax_Preview">$\lambda_c$</span><script type="math/tex">\lambda_c</script></span> is too big, rare words did occur more frequently, even at the cost of killing the common-but-informative words:</p>
+<ul>
+<li><code>adversarial</code> and <code>gan</code> seems to be all over the place.</li>
+<li><code>video</code> is preferred over <code>image</code>, even though the author did not publish a lot of works about video (e.g. Kaiming He).</li>
+<li><code>word</code> consistently beats <code>language</code>, although they sound equally informative to me (i.e. they are both significant indicator of NLP, but nothing more).</li>
+<li>I don't know how <code>quantum</code> gets in Daphne Koller's list.</li>
+</ul>
+<h4>Embedding visualizations</h4>
+<p>I tabulated the embeddings of authors which occurred more than 5 times:</p>
+<ul>
+<li><a href="https://raw.githubusercontent.com/BruceChaun/ArxivInference/master/users.tsv">Metadata file</a></li>
+<li><a href="https://raw.githubusercontent.com/BruceChaun/ArxivInference/master/embedding.tsv">Embedding</a><ul>
+<li><a href="http://projector.tensorflow.org/?config=https://raw.githubusercontent.com/BruceChaun/ArxivInference/master/projector.json">See on Tensorflow Projector</a></li>
+</ul>
+</li>
+<li><a href="https://raw.githubusercontent.com/BruceChaun/ArxivInference/master/embedding-lambda%3D0.1.tsv">Embedding with <span><span class="MathJax_Preview">$\lambda_c=0.1$</span><script type="math/tex">\lambda_c=0.1</script></span></a><ul>
+<li><a href="http://projector.tensorflow.org/?config=https://raw.githubusercontent.com/BruceChaun/ArxivInference/master/projector-lambda%3D0.1.json">See on Tensorflow Projector</a></li>
+</ul>
+</li>
+</ul>
+<p>Tensorflow Projector is an awesome tool as it runs T-SNE and PCA in your browser, and allows searching for nearest neighbor in terms of cosine distance or L2 distance.  Feel free to search for your neighbors <del>and evaluate my model's performance</del>!</p>
+<p>I also tabulated the words which occurred more than 5 times:</p>
+<ul>
+<li><a href="https://raw.githubusercontent.com/BruceChaun/ArxivInference/master/projector-word-lambda%3D0.1.json">Word embedding with <span><span class="MathJax_Preview">$\lambda_c=0.1$</span><script type="math/tex">\lambda_c=0.1</script></span></a><ul>
+<li><a href="http://projector.tensorflow.org/?config=https://raw.githubusercontent.com/BruceChaun/ArxivInference/master/projector-word-lambda%3D0.1.json">See on Tensorflow Projector</a></li>
+</ul>
+</li>
+</ul>
+<p>The PCA of the words looks like this:</p>
+<p><img alt="" src="https://barclayii.github.io/images/author-projector-word-embedding.png"></p>
+<p>The result seems a bit satisfactory:</p>
+<ul>
+<li>Computer-vision-related words are placed on top left.</li>
+<li>Language-related words are placed at top right.</li>
+<li>The words at the top are more or less focused on practical applications.</li>
+<li>The words at the bottom seems all about theory and optimization.</li>
+<li>Interestingly, the word <code>state-of-the-art</code> sits at the top-left, surrounded by computer vision words.  <strong>This doesn't mean that getting state-of-the-art result in computer vision is easy, nor easier than other fields</strong>.</li>
+<li>We can also see that the word <code>future</code> sits at the top-right, close to the NLP-ish words.  <strong>This doesn't say that NLP is the <em>only</em> future</strong>.</li>
+</ul>
+  </div>
+  <div class="tag-cloud">
+    <p>
+      <a href="https://barclayii.github.io/tag/nlp.html">nlp</a>
+      <a href="https://barclayii.github.io/tag/word-embedding.html">word-embedding</a>
+      <a href="https://barclayii.github.io/tag/shallow.html">shallow</a>
+    </p>
+  </div>
+
+
+
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'barclayiiblog';
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>
+        Please enable JavaScript to view comments.
+
+</noscript>
+</article>
+
+    <footer>
+<p>&copy; Quan Gan (Andy) </p>
+<p>    Powered by <a href="http://getpelican.com" target="_blank">Pelican</a> - <a href="https://github.com/alexandrevicenzi/flex" target="_blank">Flex</a> theme by <a href="http://alexandrevicenzi.com" target="_blank">Alexandre Vicenzi</a>
+</p>    </footer>
+  </main>
+
+
+
+
+
+<script type="application/ld+json">
+{
+  "@context" : "http://schema.org",
+  "@type" : "Blog",
+  "name": " Quan Gan (Andy) @ NYU ",
+  "url" : "https://barclayii.github.io",
+  "image": "",
+  "description": "Random notes on Machine Learning (Deep Learning in particular)"
+}
+</script>
+</body>
+</html>
